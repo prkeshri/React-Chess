@@ -3,8 +3,9 @@ import { invertTeam } from "../utils/typeUtils";
 import { Pawn } from "./piece/Pawn";
 import { Piece } from "./Piece";
 import { Position } from "./Position";
-import { Team } from "./team";
+import { Team } from "./Team";
 import { Positions } from "../utils/position";
+import { King } from "./piece/King";
 
 export class Board {
   _pieces: Piece[] = [];
@@ -77,7 +78,7 @@ export class Board {
     const newPiece = Piece.make(
       pawn.position,
       pieceType,
-      TeamType.OUR,
+      pawn.team,
       false
     );
     const newPieces = this.pieces.filter(piece => piece !== pawn);
@@ -130,7 +131,7 @@ export class Board {
       return {
         type: MoveType.CAPTURED,
         isCheck,
-        isCastling
+        isCastling,
       };
     }
     return {
@@ -201,8 +202,13 @@ export class Board {
           if (destPiece.team !== piece.team) {
             possibleMoves.push(point);
             if (destPiece.isKing && !playingTeam) {
-              otherKing.isAttacked = true;
-              otherTeamRef.allowedMoves.push(...possibleMoves, piece.position)
+              if (otherKing.isAttacked) {
+                otherTeamRef.restrictedMoves = [];
+              } else {
+                otherKing.isAttacked = true;
+                otherTeamRef.restrictedMoves = otherTeamRef.restrictedMoves ?? [];
+                otherTeamRef.restrictedMoves.push(...possibleMoves, piece.position);
+              }
             }
           } else {
             possibleNextAttacks.push(point);
@@ -225,10 +231,17 @@ export class Board {
       }
 
       if (kingDenies.length) {
-        otherKing.deniedMoves.push(...kingDenies);
+        const otherKingMoved = !otherKing.hasMoved;
+        const { x, y } = otherKing.position;
+        otherKing.deniedMoves.push(...kingDenies.filter(p => {
+          if ((otherKingMoved && (p._y === 0 || p._y === 7)) || (Math.abs(x - p._x) <= 1 && Math.abs(y - p._y) <= 1)) {
+            return true;
+          }
+          return false;
+        }));
       }
 
-      if (!destPiece) {
+      if (!destPiece || destPiece.team === piece.team) {
         return possibleMoves;
       }
       if (destPiece.isKing && truthy()) {
@@ -245,7 +258,7 @@ export class Board {
           afterKillMoves.push(point);
         } else {
           if (destPiece.isKing) {
-            attackPiece.allowedMoves = [...possibleMoves, piece.position, ...afterKillMoves];
+            attackPiece.restrictedMoves = [...possibleMoves, piece.position, ...afterKillMoves];
           }
           break;
         }
@@ -254,14 +267,14 @@ export class Board {
       return possibleMoves;
     } else {
       let finalPossibleMoves = possibleMoves;
-      if (piece.allowedMoves.length && possibleMoves.length) {
-        finalPossibleMoves = Positions.commons(possibleMoves, piece.allowedMoves);
+      if (piece.restrictedMoves && possibleMoves.length) {
+        finalPossibleMoves = Positions.commons(possibleMoves, piece.restrictedMoves);
       }
-      if (piece.deniedMoves.length && finalPossibleMoves.length) {
-        finalPossibleMoves = Positions.diff(finalPossibleMoves, piece.deniedMoves);
+      if ((piece as King).deniedMoves?.length && finalPossibleMoves.length) {
+        finalPossibleMoves = Positions.diff(finalPossibleMoves, (piece as King).deniedMoves);
       }
-      if (!piece.isKing && piece.teamRef.allowedMoves.length && finalPossibleMoves.length) {
-        finalPossibleMoves = Positions.commons(finalPossibleMoves, piece.teamRef.allowedMoves);
+      if (!piece.isKing && piece.teamRef.restrictedMoves && finalPossibleMoves.length) {
+        finalPossibleMoves = Positions.commons(finalPossibleMoves, piece.teamRef.restrictedMoves);
       }
       return finalPossibleMoves;
     }

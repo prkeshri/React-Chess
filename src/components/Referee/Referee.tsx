@@ -48,21 +48,7 @@ export default function Referee() {
   }
 
   function playMove(playedPiece: Piece, destination: Position) {
-    // If the playing piece doesn't have any moves return
-    if (!playedPiece.possibleMoves?.length) return false;
-
-    // Prevent the inactive team from playing
-    if (playedPiece.team === TeamType.OUR && board.totalTurns % 2 !== 1)
-      return false;
-    if (playedPiece.team === TeamType.OPPONENT && board.totalTurns % 2 !== 0)
-      return false;
-
-    const validMove = playedPiece.possibleMoves?.some((m) =>
-      m.samePosition(destination)
-    );
-
-    if (!validMove) return false;
-
+    // MUST give a valid move
     board.totalTurns += 1;
     const moveResult = board.playMove(playedPiece, destination);
     if (playedPiece.isPawn && destination.isVerticalEdge) {

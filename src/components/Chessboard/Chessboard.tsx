@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function Chessboard({ playMove, board: chessBoard }: Props) {
-  const { pieces, currentTeam } = chessBoard;
+  const { pieces } = chessBoard;
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
   const chessboardRef = useRef<HTMLDivElement>(null);
@@ -104,13 +104,13 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
   }
 
   const [clicked, setClicked] = useState<Piece>();
-  function handleClick(i: number, j: number, piece?: Piece) {
+  function handleClick(i: number, j: number, piece?: Piece, force = false) {
     const p = new Position(i, j);
     if (clicked) {
       if (clicked === piece) {
         return setClicked(undefined);
       }
-      if (clicked.possibleMoves?.find(m => m.samePosition(p))) {
+      if (force || clicked.possibleMoves?.find(m => m.samePosition(p))) {
         setClicked(undefined);
         playMove(clicked, new Position(i, j));
         return;
@@ -141,8 +141,16 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
         currentPiece.possibleMoves.some(p => p.samePosition(new Position(i, j))) : false;
       const image = piece ? piece.image : undefined;
 
-      board.push(<Tile sameTeam={currentPiece?.team === piece?.team} clicked={!!(clicked && clicked === piece)} key={`${j},${i}`} ij={{ i, j }} image={image} number={number} highlight={highlight}
-        onClick={() => handleClick(i, j, piece)} />);
+      board.push(<Tile
+        sameTeam={currentPiece?.team === piece?.team}
+        clicked={!!(clicked && clicked === piece)}
+        key={`${j},${i}`}
+        ij={{ i, j }}
+        image={image} number={number}
+        highlight={highlight}
+        onClick={() => handleClick(i, j, piece)}
+        onContextmenu={() => handleClick(i, j, piece, true)}
+      />);
     }
   }
 

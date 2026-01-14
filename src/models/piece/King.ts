@@ -7,11 +7,14 @@ import { Rook } from "./Rook";
 class King extends Piece {
     static iterOnce = true;
     isAttacked?: boolean;
+    deniedMoves: Position[] = [];
+
     getIterSteps() {
         return Queen.prototype.getIterSteps();
     }
     freshenUp(): void {
         super.freshenUp();
+        this.deniedMoves = [];
         this.isAttacked = false;
     }
     calculateCastlingMoves() {

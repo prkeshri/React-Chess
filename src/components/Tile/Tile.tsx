@@ -6,12 +6,22 @@ interface Props {
   number: number;
   highlight: boolean;
   ij: { i: number; j: number; };
-  onClick: Function;
+  onClick: any;
+  onContextmenu: any;
   clicked: boolean;
   sameTeam?: boolean;
 }
 
-export default function Tile({ number, sameTeam, image, highlight, ij: { i, j }, onClick, clicked }: Props) {
+export default function Tile({
+  number,
+  sameTeam,
+  image,
+  highlight,
+  ij: { i, j },
+  onClick,
+  clicked,
+  onContextmenu
+}: Props) {
   const className: string = ["tile",
     number % 2 === 0 && "black-tile",
     number % 2 !== 0 && "white-tile",
@@ -25,7 +35,7 @@ export default function Tile({ number, sameTeam, image, highlight, ij: { i, j },
     style.boxSizing = 'border-box';
   }
   return (
-    <div className={className} onClick={onClick as any} style={style}>
+    <div className={className} onClick={onClick} onContextMenu={(e) => { onContextmenu(); e.preventDefault(); }} style={style}>
       <div style={{ position: 'absolute', left: '10%', top: '10%' }}>{i},{j}</div>
       {image && <div style={{ backgroundImage: `url(${image})` }} className="chess-piece"></div>}
     </div>

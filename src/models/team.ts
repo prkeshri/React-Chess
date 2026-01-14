@@ -7,13 +7,13 @@ export class Team {
     type: TeamType;
     pieces: Piece[] = [];
     king!: King;
-    allowedMoves: Position[] = [];
+    restrictedMoves?: Position[];
     constructor(type: TeamType) {
         this.type = type;
     }
 
     freshenUp() {
-        this.allowedMoves = [];
+        this.restrictedMoves = undefined;
     }
 
     empty() {

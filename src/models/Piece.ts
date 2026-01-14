@@ -1,7 +1,7 @@
 import { TeamType, PieceType, PieceTypeFull } from "../Types";
 import { Board } from "./Board";
 import { Position } from "./Position";
-import { Team } from "./team";
+import { Team } from "./Team";
 
 export abstract class Piece {
     image: string;
@@ -10,15 +10,13 @@ export abstract class Piece {
     team: TeamType;
     possibleMoves?: Position[];
     _hasMoved: boolean = false;
-    allowedMoves: Position[] = [];
-    deniedMoves: Position[] = [];
+    restrictedMoves?: Position[];
     board!: Board;
     teamRef!: Team;
     static iterOnce: boolean = false;
     freshenUp() {
         this.possibleMoves = [];
-        this.allowedMoves = [];
-        this.deniedMoves = [];
+        this.restrictedMoves = undefined;
     }
     serialize() {
         return [this._position.x, this._position.y, this.type,
