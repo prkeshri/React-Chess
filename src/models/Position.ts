@@ -1,17 +1,55 @@
+import { Piece } from "./Piece";
+
 export class Position {
-    x: number;
-    y: number;
+    _x: number;
+    _y: number;
+    piece: Piece | undefined;
     constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+        this._x = x;
+        this._y = y;
     }
 
+    get isVerticalEdge() {
+        return this._y === 0 || this._y === 7;
+    }
     samePosition(otherPosition: Position): boolean {
-        return this.x === otherPosition.x &&
-            this.y === otherPosition.y;
+        return this._x === otherPosition._x &&
+            this._y === otherPosition._y;
+    }
+
+    with(p: Piece) {
+        this.piece = p;
+        return this;
+    }
+    get xy() {
+        return this._x + 'x' + this._y;
+    }
+    get x() {
+        return this._x;
+    }
+
+    set x(x: number) {
+        if (x === this._x) {
+            return;
+        }
+        this._x = x;
+        if (this.piece) this.piece._hasMoved = true;
+    }
+
+
+    get y() {
+        return this._y;
+    }
+
+    set y(y: number) {
+        if (y === this._y) {
+            return;
+        }
+        this._y = y;
+        if (this.piece) this.piece._hasMoved = true;
     }
 
     clone(): Position {
-        return new Position(this.x, this.y);
+        return new Position(this._x, this._y);
     }
 }

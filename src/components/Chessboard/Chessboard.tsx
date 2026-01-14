@@ -7,13 +7,15 @@ import {
   GRID_SIZE,
 } from "../../Constants";
 import { Piece, Position } from "../../models";
+import { Board } from "../../models/Board";
 
 interface Props {
-  playMove: (piece: Piece, position: Position) => boolean;
-  pieces: Piece[];
+  playMove: (piece: Piece, position: Position) => void;
+  board: Board;
 }
 
-export default function Chessboard({playMove, pieces} : Props) {
+export default function Chessboard({ playMove, board: chessBoard }: Props) {
+  const { pieces, currentTeam } = chessBoard;
   const [activePiece, setActivePiece] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
   const chessboardRef = useRef<HTMLDivElement>(null);
@@ -90,19 +92,41 @@ export default function Chessboard({playMove, pieces} : Props) {
       );
 
       if (currentPiece) {
-        var succes = playMove(currentPiece.clone(), new Position(x, y));
+        playMove(currentPiece.clone(), new Position(x, y));
 
-        if(!succes) {
-          //RESETS THE PIECE POSITION
-          activePiece.style.position = "relative";
-          activePiece.style.removeProperty("top");
-          activePiece.style.removeProperty("left");
-        }
+        //RESETS THE PIECE POSITION
+        activePiece.style.position = "relative";
+        activePiece.style.removeProperty("top");
+        activePiece.style.removeProperty("left");
       }
       setActivePiece(null);
     }
   }
 
+  const [clicked, setClicked] = useState<Piece>();
+  function handleClick(i: number, j: number, piece?: Piece) {
+    const p = new Position(i, j);
+    if (clicked) {
+      if (clicked === piece) {
+        return setClicked(undefined);
+      }
+      if (clicked.possibleMoves?.find(m => m.samePosition(p))) {
+        setClicked(undefined);
+        playMove(clicked, new Position(i, j));
+        return;
+      }
+    }
+    if (!piece) {
+      return setClicked(undefined);
+    }
+    if (!piece.possibleMoves?.length) {
+      return setClicked(undefined);
+    }
+
+    return setClicked(piece);
+
+
+  }
   let board = [];
 
   for (let j = VERTICAL_AXIS.length - 1; j >= 0; j--) {
@@ -111,22 +135,23 @@ export default function Chessboard({playMove, pieces} : Props) {
       const piece = pieces.find((p) =>
         p.samePosition(new Position(i, j))
       );
-      let image = piece ? piece.image : undefined;
 
-      let currentPiece = activePiece != null ? pieces.find(p => p.samePosition(grabPosition)) : undefined;
-      let highlight = currentPiece?.possibleMoves ? 
-      currentPiece.possibleMoves.some(p => p.samePosition(new Position(i, j))) : false;
+      const currentPiece = clicked ?? (activePiece != null ? pieces.find(p => p.samePosition(grabPosition)) : undefined);
+      const highlight = currentPiece?.possibleMoves ?
+        currentPiece.possibleMoves.some(p => p.samePosition(new Position(i, j))) : false;
+      const image = piece ? piece.image : undefined;
 
-      board.push(<Tile key={`${j},${i}`} image={image} number={number} highlight={highlight} />);
+      board.push(<Tile sameTeam={currentPiece?.team === piece?.team} clicked={!!(clicked && clicked === piece)} key={`${j},${i}`} ij={{ i, j }} image={image} number={number} highlight={highlight}
+        onClick={() => handleClick(i, j, piece)} />);
     }
   }
 
   return (
     <>
       <div
-        onMouseMove={(e) => movePiece(e)}
-        onMouseDown={(e) => grabPiece(e)}
-        onMouseUp={(e) => dropPiece(e)}
+        xonMouseMove={(e) => movePiece(e)}
+        xonMouseDown={(e) => grabPiece(e)}
+        xonMouseUp={(e) => dropPiece(e)}
         id="chessboard"
         ref={chessboardRef}
       >
