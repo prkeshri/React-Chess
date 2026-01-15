@@ -3,7 +3,7 @@ import { invertTeam } from "../utils/typeUtils";
 import { Pawn } from "./piece/Pawn";
 import { Piece } from "./Piece";
 import { Position } from "./Position";
-import { Team } from "./Team";
+import { Team } from "./team";
 import { Positions } from "../utils/position";
 import { King } from "./piece/King";
 

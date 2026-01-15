@@ -1,7 +1,7 @@
 import { TeamType, PieceType, PieceTypeFull } from "../Types";
 import { Board } from "./Board";
 import { Position } from "./Position";
-import { Team } from "./Team";
+import { Team } from "./team";
 
 export abstract class Piece {
     image: string;
