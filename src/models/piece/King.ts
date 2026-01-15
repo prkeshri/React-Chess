@@ -22,7 +22,8 @@ class King extends Piece {
         const pos = this.position;
         const cMoves: Position[] = [];
         if (moves?.length && !this._hasMoved) {
-            const rooks = this.teamRef.pieces.filter(p => p.isRook) as Rook[];
+            const { rookL, rookR } = this.teamRef;
+            const rooks = [rookL, rookR].filter(r => !!r);
             rooks.forEach(rook => {
                 if (rook._hasMoved || !rook.possibleMoves?.length || rook.isAttacked) {
                     return;

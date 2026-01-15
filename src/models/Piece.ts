@@ -18,19 +18,6 @@ export abstract class Piece {
         this.possibleMoves = [];
         this.restrictedMoves = undefined;
     }
-    serialize() {
-        return [this._position.x, this._position.y, this.type,
-        this.team];
-    }
-    deserialize(data: any[]) {
-        const newPos = new Position(data[0], data[1]);
-        if (!this._position.samePosition(newPos)) {
-            this._hasMoved = true;
-            this._position = newPos;
-        }
-        this.type = data[2];
-        this.team = data[3];
-    }
     constructor(position: Position,
         type: PieceType,
         team: TeamType,
@@ -83,6 +70,11 @@ export abstract class Piece {
     get hasMoved() {
         return this._hasMoved;
     }
+
+    get fenBit() {
+        return this.teamRef.aptFenBit(this.type);
+    }
+
     getIterSteps(): Array<any> {
         throw new Error("Method not implemented.");
     }
@@ -107,12 +99,16 @@ export abstract class Piece {
     static make(position: Position,
         type: PieceType,
         team: TeamType,
-        hasMoved: boolean,
+        hasMoved = false,
         possibleMoves: Position[] = [],
         //@ts-ignore
         ...rest
     ): Piece {
         const Class = this.map[type];
+        if (type === PieceType.PAWN) {
+            //@ts-ignore
+            return new Class(position, team, hasMoved);
+        }
         //@ts-ignore
         return new Class(position, type, team, hasMoved, possibleMoves, ...rest);
     }

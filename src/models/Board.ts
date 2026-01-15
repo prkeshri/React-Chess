@@ -1,4 +1,4 @@
-import { CalculatedResult, MoveResult, MoveType, PieceType, StepOptions, TeamType } from "../Types";
+import { CalculatedResult, MoveResult, MoveType, PieceType, StepOptions, TeamType, TeamTypes } from "../Types";
 import { invertTeam } from "../utils/typeUtils";
 import { Pawn } from "./piece/Pawn";
 import { Piece } from "./Piece";
@@ -10,6 +10,7 @@ import { King } from "./piece/King";
 export class Board {
   _pieces: Piece[] = [];
   totalTurns: number;
+  halfMoves: number;
   enPassantPawn?: Pawn;
   winningTeam?: TeamType;
   staleMate?: boolean;
@@ -30,14 +31,13 @@ export class Board {
       p.teamRef = team;
     });
   }
-  constructor(pieces: Piece[], totalTurns: number) {
+  constructor(pieces: Piece[], totalTurns = 0, halfMoves = 0) {
     this.pieces = pieces;
     this.totalTurns = totalTurns;
+    this.halfMoves = halfMoves;
   }
 
-  get currentTeam(): TeamType {
-    return this.totalTurns % 2 === 0 ? TeamType.OPPONENT : TeamType.OUR;
-  }
+  currentTeam: TeamType = TeamType.OUR;
 
   pieceAt(p: Position) {
     return this._pieces.find(piece => piece.samePosition(p));
@@ -126,6 +126,7 @@ export class Board {
       false
     );
     const newPieces = this.pieces.filter(piece => piece !== pawn);
+    this.halfMoves = 0;
     newPieces.push(newPiece);
     this.pieces = newPieces;
     const { isCheck, winner } = this.calculateAllMoves();
@@ -137,7 +138,7 @@ export class Board {
     };
   }
   playMove(piece: Piece, destination: Position): MoveResult {
-    let destinationPiece;
+    let capturedPiece;
     let enPassantPawn = this.enPassantPawn;
     if (!(enPassantPawn && piece.isPawn && destination.samePosition(enPassantPawn.enPassant!))) {
       enPassantPawn = undefined;
@@ -159,7 +160,7 @@ export class Board {
     } else {
       this.pieces.forEach((p) => {
         if (p.samePosition(destination) || (p === enPassantPawn)) {
-          destinationPiece = p;
+          capturedPiece = p;
         } else {
           newPieces.push(p);
         }
@@ -175,7 +176,16 @@ export class Board {
 
     // Next turn
     this.totalTurns += 1;
-    const type = destinationPiece ? MoveType.CAPTURED : MoveType.MOVED;
+    this.currentTeam = invertTeam(this.currentTeam);
+
+    let type: MoveType;
+    if (capturedPiece) {
+      this.halfMoves = 0;
+      type = MoveType.CAPTURED;
+    } else {
+      this.halfMoves++;
+      type = MoveType.MOVED;
+    }
     const { isCheck, winner } = this.calculateAllMoves();
     return {
       type,
@@ -327,5 +337,125 @@ export class Board {
       return finalPossibleMoves;
     }
   }
+  serialize() {
+    const arr: (Piece | undefined)[][] = Array.from({ length: 8 }, () => Array.from({ length: 8 }));
+    this._pieces.forEach(p => {
+      arr[p._position._y][p._position._x] = p;
+    });
+    const rows = [];
+    for (let j = 7; j >= 0; j--) {
+      const row = arr[j];
+      let blanks = 0;
+      const bits = [];
+      for (let i = 0; i < 8; i++) {
+        const piece = row[i];
+        if (!piece) {
+          blanks++;
+          continue;
+        }
+        if (blanks > 0) {
+          bits.push(blanks);
+          blanks = 0;
+        }
+        bits.push(piece.fenBit);
+      }
+      if (blanks > 0) {
+        bits.push(blanks);
+      }
+      rows.push(bits.join(''));
+    }
 
+    const fields = [];
+    // Pieces
+    fields.push(rows.join('/'));
+
+    // Current Team
+    fields.push(this.currentTeam)
+
+    const castleConfigs: string[] = [];
+    const calcCastleConfig = (t: Team) => {
+      if (t.king.hasMoved) {
+        return;
+      }
+      if (t.rookR && !t.rookR.hasMoved) {
+        castleConfigs.push(t.king.fenBit);
+      }
+      if (t.rookL && !t.rookL.hasMoved) {
+        castleConfigs.push(t.aptFenBit(PieceType.QUEEN));
+      }
+    }
+
+    calcCastleConfig(this.teams.w);
+    calcCastleConfig(this.teams.b);
+    fields.push(castleConfigs.join('') || '-');
+
+    fields.push(this.enPassantPawn?.enPassant ?
+      this.enPassantPawn.enPassant.notation
+      : '-');
+
+    fields.push(this.halfMoves);
+
+    const fullMoves = Math.ceil(this.totalTurns / 2);
+    fields.push(fullMoves);
+
+    return fields.join(' ');
+  }
+
+  static deserialize(fen: string) {
+    const [rows$, currentTeam, castles, enPassant, halfMoves, fullMoves] = fen.split(' ');
+    const rows = rows$.split('/');
+    let y = 8;
+    const pieces: Piece[] = [];
+    rows.forEach(r => {
+      y--;
+      let x = 0;
+      r.split('').forEach(n => {
+        const spaces = parseInt(n);
+        if (!isNaN(spaces)) {
+          x += spaces;
+          return;
+        }
+        const team = Team.which(n);
+        const piece = Piece.make(new Position(x, y), n.toLowerCase() as PieceType, team);
+        pieces.push(piece);
+        x++;
+      });
+    });
+
+    const board = new this(pieces);
+    board.currentTeam = currentTeam as TeamType;
+    if (castles !== '-') {
+      castles.split('').forEach(c => {
+        const team = Team.which(c);
+        const teamRef = board.teams[team];
+        teamRef.king._hasMoved = false;
+        const kq = c.toLowerCase();
+        if (kq === 'k') {
+          teamRef.rookR!._hasMoved = false;
+        } else {
+          teamRef.rookL!._hasMoved = false;
+        }
+      });
+    }
+
+    if (enPassant !== '-') {
+      const posRaw = Position.raw(enPassant);
+      const [x, y] = posRaw;
+      const pawnY = y === 2 ? 3 : 4;
+      const pawn = board.pieceAt(new Position(x, pawnY)) as Pawn | undefined;
+      if (!pawn) {
+        //return null;
+      } else {
+        pawn.enPassant = new Position(x, y);
+        board.enPassantPawn = pawn;
+      }
+    }
+
+    board.halfMoves = parseInt(halfMoves);
+    const total = (parseInt(fullMoves) * 2) + (currentTeam === TeamType.OUR ? -1 : 0)
+    board.totalTurns = total;
+
+    board.calculateAllMoves();
+    return board;
+  }
 }

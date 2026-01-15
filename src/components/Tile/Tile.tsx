@@ -41,7 +41,9 @@ export default function Tile({
   }
   return (
     <div className={className} data-x={i} data-y={j} style={style}>
-      <div style={{ position: 'absolute', left: '10%', top: '10%', fontSize: '50%' }}>{String.fromCharCode(i + 97)}{j + 1}</div>
+      <div style={{ position: 'absolute', left: '10%', top: '10%', fontSize: '50%' }}>
+        {String.fromCharCode(i + 97)}{j + 1}
+      </div>
       {
         image
           ? <div style={{ backgroundImage: `url(${image})` }} className="chess-piece" />

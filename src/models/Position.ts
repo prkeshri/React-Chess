@@ -52,4 +52,13 @@ export class Position {
     clone(): Position {
         return new Position(this._x, this._y);
     }
+
+    get notation() {
+        return String.fromCharCode(this._x + 97) + (this._y + 1);
+    }
+
+    static raw(notation: string): [number, number] {
+        const [x97, y1] = notation.split('');
+        return [x97.charCodeAt(0) - 97, parseInt(y1) - 1];
+    }
 }

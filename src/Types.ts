@@ -17,6 +17,10 @@ export enum PieceTypeFull {
     q = 'queen',
     k = 'king',
 }
+export enum TeamTypes {
+    WHITE = 'w',
+    BLACK = 'b'
+}
 
 export enum TeamType {
     OPPONENT = 'b',

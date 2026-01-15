@@ -19,6 +19,17 @@ export default function Referee() {
     },
   }));
   useEffect(() => {
+    let hash = decodeURIComponent(window.location.hash ?? '');
+    if (hash) {
+      hash = hash.substring(1);
+      if (hash) {
+        const lb = Board.deserialize(hash);
+        if (lb) {
+          boardRef.current = lb;
+        }
+        rerender();
+      }
+    }
     gameStartSound.play();
   }, []);
   const [promotionPawn, setPromotionPawn] = useState<Piece>();
@@ -45,6 +56,7 @@ export default function Referee() {
       setPromotionPawn(playedPiece);
     } else {
       playSound(moveResult);
+      window.location.hash = board.serialize();
     }
     rerender();
 
@@ -56,19 +68,13 @@ export default function Referee() {
 
   function doUndoRedo(undo: boolean) {
     const historyState = history[undo ? 'undo' : 'redo']();
-    if (!historyState)
-      return;
-    const boardRef = historyState.state;
-    rerender();
-    /*   if (!checkWin(boardRef)) {
-         if (undo) {
-           moveSound.play();
-         } else {
-           playSound(historyState.moveResult);
-         }
-       }*/
+    // to do
   }
 
+  function doClone() {
+    const hash = board.serialize();
+    window.open(window.location.href.split('#')[0] + '#' + hash, "_blank");
+  }
   function promotePawn(pieceType: PieceType) {
     if (promotionPawn === undefined) {
       return;
@@ -76,6 +82,7 @@ export default function Referee() {
     const result = board.promote(promotionPawn, pieceType);
     playSound(result);
     setPromotionPawn(undefined);
+    window.location.hash = board.serialize();
   }
 
   function restartGame() {
@@ -84,14 +91,27 @@ export default function Referee() {
     rerender();
   }
 
+  function load() {
+    const fen = prompt("Enter FEN");
+    if (!fen) {
+      return;
+    }
+    const newBoard = Board.deserialize(fen);
+    if (!newBoard) {
+      alert("Invalid FEN!");
+      return;
+    }
+    boardRef.current = newBoard;
+    rerender();
+  }
+
   return (
     <>
       <div className="relative"><div style={{ position: 'absolute' }}>
-        <button onClick={() => { board.calculateAllMoves(); rerender(); }}>Re
-        </button>
-        <button onClick={() => doUndoRedo(true)} disabled={!history.canUndo()}>Undo</button> |
-        <button onClick={() => doUndoRedo(false)} disabled={!history.canRedo()}>Redo</button> |
-        <button onClick={() => { }}>Clone Board</button>
+        <button onClick={() => { board.calculateAllMoves(); rerender(); }}>Re</button>
+        <button onClick={() => doClone()}>Clone Board</button>
+        <button onClick={() => { console.log(board.serialize()) }}>PRINT</button>
+        <button onClick={() => load()}>LOAD</button>
       </div>
       </div>
       <hr />
