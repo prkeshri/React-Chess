@@ -1,0 +1,12 @@
+.controls {
+    position: relative;
+}
+
+.controls>.controls-out {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-start;
+    gap: 2%;
+}

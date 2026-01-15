@@ -7,6 +7,7 @@ import Chessboard from "../Chessboard/Chessboard";
 import { createHistory } from "../../utils/history";
 import { useRefX, useRenderer } from "../../utils/utils";
 import { playSound, gameStartSound } from "./sounds";
+import "./Referee.css";
 
 export default function Referee() {
   const rerender = useRenderer();
@@ -18,36 +19,31 @@ export default function Referee() {
       type: MoveType.MOVED,
     },
   }));
+
+  const fenNotation = useRef("");
   useEffect(() => {
-    let hash = decodeURIComponent(window.location.hash ?? '');
-    if (hash) {
-      hash = hash.substring(1);
+    const hashChangeEvent = () => {
+      let hash = decodeURIComponent(window.location.hash ?? '');
       if (hash) {
-        const lb = Board.deserialize(hash);
-        if (lb) {
-          boardRef.current = lb;
+        hash = hash.substring(1);
+        if (hash && fenNotation.current !== hash) {
+          const lb = Board.deserialize(hash);
+          if (lb) {
+            boardRef.current = lb;
+          }
+          fenNotation.current = hash;
+          rerender();
         }
-        rerender();
       }
     }
+    window.addEventListener("hashchange", hashChangeEvent)
+
+    hashChangeEvent();
     gameStartSound.play();
+
+    return () => window.removeEventListener("hashchange", hashChangeEvent);
   }, []);
   const [promotionPawn, setPromotionPawn] = useState<Piece>();
-  useEffect(() => {
-    function keyPressHandler(e: KeyboardEvent) {
-      if (e.ctrlKey) {
-        if (e.code === 'KeyZ') {
-          doUndoRedo(true);
-        } else if (e.code === 'KeyY') {
-          doUndoRedo(false);
-        }
-      }
-    }
-
-    window.addEventListener('keydown', keyPressHandler);
-
-    return () => window.removeEventListener('keydown', keyPressHandler);
-  }, []);
 
   function playMove(playedPiece: Piece, destination: Position) {
     // MUST give a valid move
@@ -56,7 +52,7 @@ export default function Referee() {
       setPromotionPawn(playedPiece);
     } else {
       playSound(moveResult);
-      window.location.hash = board.serialize();
+      window.location.hash = fenNotation.current = board.serialize();
     }
     rerender();
 
@@ -64,11 +60,6 @@ export default function Referee() {
       state: board,
       moveResult,
     });
-  }
-
-  function doUndoRedo(undo: boolean) {
-    const historyState = history[undo ? 'undo' : 'redo']();
-    // to do
   }
 
   function doClone() {
@@ -107,12 +98,12 @@ export default function Referee() {
 
   return (
     <>
-      <div className="relative"><div style={{ position: 'absolute' }}>
-        <button onClick={() => { board.calculateAllMoves(); rerender(); }}>Re</button>
-        <button onClick={() => doClone()}>Clone Board</button>
-        <button onClick={() => { console.log(board.serialize()) }}>PRINT</button>
-        <button onClick={() => load()}>LOAD</button>
-      </div>
+      <div className="controls">
+        <div className="controls-out">
+          <button onClick={() => doClone()}>Clone Board</button>
+          <button onClick={() => { console.log(board.serialize()) }}>PRINT</button>
+          <button onClick={() => load()}>LOAD</button>
+        </div>
       </div>
       <hr />
       <p style={{ color: "white", fontSize: "24px", textAlign: "center" }}>

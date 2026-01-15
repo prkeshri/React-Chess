@@ -8,25 +8,8 @@ import { Pawn } from "./models/piece/Pawn";
 export const VERTICAL_AXIS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 export const HORIZONTAL_AXIS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
-export const GRID_SIZE = 100;
-
 export const initialBoard = () => {
-  const initialBoard = /* new Board([
-  Piece.make(
-    new Position(1, 7),
-    PieceType.KNIGHT,
-    TeamType.OPPONENT,
-    false),
-  Piece.make(
-    new Position(4, 7),
-    PieceType.KING,
-    TeamType.OPPONENT,
-    false), Piece.make(
-      new Position(4, 0),
-      PieceType.KING,
-      TeamType.OUR,
-      false),
-], 1) &&//*/
+  const initialBoard =
     new Board([
       Piece.make(
         new Position(0, 7),
@@ -173,7 +156,7 @@ export const initialBoard = () => {
         new Position(7, 1),
         TeamType.OUR,
         false),
-    ].filter(f => f), 1);//*/
+    ], 1);//*/
 
   initialBoard.calculateAllMoves();
   return initialBoard;

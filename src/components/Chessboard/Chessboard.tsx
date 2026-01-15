@@ -4,7 +4,6 @@ import Tile from "../Tile/Tile";
 import {
   VERTICAL_AXIS,
   HORIZONTAL_AXIS,
-  GRID_SIZE,
 } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";

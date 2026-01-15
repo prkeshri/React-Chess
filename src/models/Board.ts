@@ -402,60 +402,64 @@ export class Board {
   }
 
   static deserialize(fen: string) {
-    const [rows$, currentTeam, castles, enPassant, halfMoves, fullMoves] = fen.split(' ');
-    const rows = rows$.split('/');
-    let y = 8;
-    const pieces: Piece[] = [];
-    rows.forEach(r => {
-      y--;
-      let x = 0;
-      r.split('').forEach(n => {
-        const spaces = parseInt(n);
-        if (!isNaN(spaces)) {
-          x += spaces;
-          return;
-        }
-        const team = Team.which(n);
-        const piece = Piece.make(new Position(x, y), n.toLowerCase() as PieceType, team);
-        pieces.push(piece);
-        x++;
+    try {
+      const [rows$, currentTeam, castles, enPassant, halfMoves, fullMoves] = fen.split(' ');
+      const rows = rows$.split('/');
+      let y = 8;
+      const pieces: Piece[] = [];
+      rows.forEach(r => {
+        y--;
+        let x = 0;
+        r.split('').forEach(n => {
+          const spaces = parseInt(n);
+          if (!isNaN(spaces)) {
+            x += spaces;
+            return;
+          }
+          const team = Team.which(n);
+          const piece = Piece.make(new Position(x, y), n.toLowerCase() as PieceType, team);
+          pieces.push(piece);
+          x++;
+        });
       });
-    });
 
-    const board = new this(pieces);
-    board.currentTeam = currentTeam as TeamType;
-    if (castles !== '-') {
-      castles.split('').forEach(c => {
-        const team = Team.which(c);
-        const teamRef = board.teams[team];
-        teamRef.king._hasMoved = false;
-        const kq = c.toLowerCase();
-        if (kq === 'k') {
-          teamRef.rookR!._hasMoved = false;
-        } else {
-          teamRef.rookL!._hasMoved = false;
-        }
-      });
-    }
-
-    if (enPassant !== '-') {
-      const posRaw = Position.raw(enPassant);
-      const [x, y] = posRaw;
-      const pawnY = y === 2 ? 3 : 4;
-      const pawn = board.pieceAt(new Position(x, pawnY)) as Pawn | undefined;
-      if (!pawn) {
-        //return null;
-      } else {
-        pawn.enPassant = new Position(x, y);
-        board.enPassantPawn = pawn;
+      const board = new this(pieces);
+      board.currentTeam = currentTeam as TeamType;
+      if (castles !== '-') {
+        castles.split('').forEach(c => {
+          const team = Team.which(c);
+          const teamRef = board.teams[team];
+          teamRef.king._hasMoved = false;
+          const kq = c.toLowerCase();
+          if (kq === 'k') {
+            teamRef.rookR!._hasMoved = false;
+          } else {
+            teamRef.rookL!._hasMoved = false;
+          }
+        });
       }
+
+      if (enPassant !== '-') {
+        const posRaw = Position.raw(enPassant);
+        const [x, y] = posRaw;
+        const pawnY = y === 2 ? 3 : 4;
+        const pawn = board.pieceAt(new Position(x, pawnY)) as Pawn | undefined;
+        if (!pawn) {
+          //return null;
+        } else {
+          pawn.enPassant = new Position(x, y);
+          board.enPassantPawn = pawn;
+        }
+      }
+
+      board.halfMoves = parseInt(halfMoves);
+      const total = (parseInt(fullMoves) * 2) + (currentTeam === TeamType.OUR ? -1 : 0)
+      board.totalTurns = total;
+
+      board.calculateAllMoves();
+      return board;
+    } catch (e) {
+      return null;
     }
-
-    board.halfMoves = parseInt(halfMoves);
-    const total = (parseInt(fullMoves) * 2) + (currentTeam === TeamType.OUR ? -1 : 0)
-    board.totalTurns = total;
-
-    board.calculateAllMoves();
-    return board;
   }
 }
