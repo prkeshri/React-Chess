@@ -300,13 +300,13 @@ export class Board {
         return possibleMoves;
       }
 
-      const attackPiece = destPiece;
+      const attackedPiece = destPiece;
       for (init(); truthy(); next()) {
         if (!destPiece) {
           afterKillMoves.push(point);
         } else {
           if (destPiece.isKing && destPiece.team !== piece.team) {
-            attackPiece.restrictedMoves = [...possibleMoves, piece.position, ...afterKillMoves];
+            attackedPiece.restrictedMoves = [...possibleMoves, piece.position, ...afterKillMoves];
           }
           break;
         }
