@@ -39,6 +39,10 @@ export class Board {
     return this.totalTurns % 2 === 0 ? TeamType.OPPONENT : TeamType.OUR;
   }
 
+  pieceAt(p: Position) {
+    return this._pieces.find(piece => piece.samePosition(p));
+  }
+
   calculateAllMoves(): CalculatedResult {
     const currentTeam = this.currentTeam;
 

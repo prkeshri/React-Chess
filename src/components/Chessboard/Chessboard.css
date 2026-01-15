@@ -1,10 +1,13 @@
 #chessboard {
   display: grid;
-  grid-template-columns: repeat(8, 100px);
-  grid-template-rows: repeat(8, 100px);
-  width: 800px;
-  height: 800px;
+  grid-template-columns: repeat(8, 12.5%);
+  grid-template-rows: repeat(8, 12.5%);
+  width: auto;
+  height: 80vh;
   background-color: blue;
+  aspect-ratio: 1;
+  position: relative;
+  user-select: none;
 }
 
 .modal {

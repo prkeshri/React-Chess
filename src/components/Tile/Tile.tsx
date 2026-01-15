@@ -1,4 +1,4 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect, useState } from "react";
 import "./Tile.css";
 
 interface Props {
@@ -6,10 +6,9 @@ interface Props {
   number: number;
   highlight: boolean;
   ij: { i: number; j: number; };
-  onClick: any;
-  onContextmenu: any;
   clicked: boolean;
   sameTeam?: boolean;
+  onRender: (setter: any) => void;
 }
 
 export default function Tile({
@@ -18,16 +17,22 @@ export default function Tile({
   image,
   highlight,
   ij: { i, j },
-  onClick,
   clicked,
-  onContextmenu
+  onRender,
 }: Props) {
+  const [highlighter, setHighlighter] = useState('');
+  useEffect(() => {
+    onRender((newHighlighter: string) => {
+      setHighlighter(newHighlighter);
+    });
+    return () => onRender(null);
+  }, []);
   const className: string = ["tile",
     number % 2 === 0 && "black-tile",
     number % 2 !== 0 && "white-tile",
     highlight && "tile-highlight",
+    highlighter && `tile-highlight-${highlighter}`,
     (image && !sameTeam) && "chess-piece-tile"].filter(Boolean).join(' ');
-
 
   let style: CSSProperties = {};
   if (clicked) {
@@ -35,9 +40,13 @@ export default function Tile({
     style.boxSizing = 'border-box';
   }
   return (
-    <div className={className} onClick={onClick} onContextMenu={(e) => { onContextmenu(); e.preventDefault(); }} style={style}>
-      <div style={{ position: 'absolute', left: '10%', top: '10%' }}>{i},{j}</div>
-      {image && <div style={{ backgroundImage: `url(${image})` }} className="chess-piece"></div>}
+    <div className={className} data-x={i} data-y={j} style={style}>
+      <div style={{ position: 'absolute', left: '10%', top: '10%', fontSize: '50%' }}>{String.fromCharCode(i + 97)}{j + 1}</div>
+      {
+        image
+          ? <div style={{ backgroundImage: `url(${image})` }} className="chess-piece" />
+          : null
+      }
     </div>
   );
 }
