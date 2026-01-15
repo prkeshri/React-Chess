@@ -305,7 +305,7 @@ export class Board {
         if (!destPiece) {
           afterKillMoves.push(point);
         } else {
-          if (destPiece.isKing) {
+          if (destPiece.isKing && destPiece.team !== piece.team) {
             attackPiece.restrictedMoves = [...possibleMoves, piece.position, ...afterKillMoves];
           }
           break;
