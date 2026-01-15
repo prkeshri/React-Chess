@@ -24,13 +24,17 @@ export const checkmateSound = new Howl({
 });
 
 export function playSound(moveResult: MoveResult) {
-    const { type: moveType, isCastling, isCheck } = moveResult;
-    if (isCheck) {
+    const { type: moveType, isCastling, isCheck, winner, promoted } = moveResult;
+    if (winner) {
+        checkmateSound.play();
+    } else if (isCheck) {
         checkSound.play();
     } else if (moveType === MoveType.CAPTURED) {
         captureSound.play();
     } else if (isCastling) {
         castleSound.play();
+    } else if (promoted) {
+        promoteSound.play();
     } else if (moveType === MoveType.MOVED) {
         moveSound.play();
     }

@@ -29,10 +29,16 @@ export enum MoveType {
     NONE = 'none',
 }
 
-export type MoveResult = {
-    type: MoveType,
+export type CalculatedResult = {
     isCheck?: boolean;
+    winner?: TeamType;
+    staleMate?: boolean;
+};
+
+export type MoveResult = CalculatedResult & {
+    type: MoveType,
     isCastling?: boolean;
+    promoted?: boolean;
 };
 
 export type BoardHistory = {

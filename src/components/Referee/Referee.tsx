@@ -2,12 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { initialBoard } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";
-import { Pawn } from "../../models/piece/Pawn";
 import { BoardHistory, MoveType, PieceType, TeamType } from "../../Types";
 import Chessboard from "../Chessboard/Chessboard";
 import { createHistory } from "../../utils/history";
 import { useRefX, useRenderer } from "../../utils/utils";
-import { checkmateSound, playSound, moveSound, gameStartSound, checkSound, promoteSound } from "./sounds";
+import { playSound, gameStartSound } from "./sounds";
 
 export default function Referee() {
   const rerender = useRenderer();
@@ -39,17 +38,8 @@ export default function Referee() {
     return () => window.removeEventListener('keydown', keyPressHandler);
   }, []);
 
-  function checkWin(refBoard: Board) {
-    if (refBoard.winningTeam !== undefined) {
-      checkmateSound.play();
-      return true;
-    }
-    return false;
-  }
-
   function playMove(playedPiece: Piece, destination: Position) {
     // MUST give a valid move
-    board.totalTurns += 1;
     const moveResult = board.playMove(playedPiece, destination);
     if (playedPiece.isPawn && destination.isVerticalEdge) {
       setPromotionPawn(playedPiece);
@@ -62,8 +52,6 @@ export default function Referee() {
       state: board,
       moveResult,
     });
-
-    checkWin(board);
   }
 
   function doUndoRedo(undo: boolean) {
@@ -72,25 +60,21 @@ export default function Referee() {
       return;
     const boardRef = historyState.state;
     rerender();
-    if (!checkWin(boardRef)) {
-      if (undo) {
-        moveSound.play();
-      } else {
-        playSound(historyState.moveResult);
-      }
-    }
+    /*   if (!checkWin(boardRef)) {
+         if (undo) {
+           moveSound.play();
+         } else {
+           playSound(historyState.moveResult);
+         }
+       }*/
   }
 
   function promotePawn(pieceType: PieceType) {
     if (promotionPawn === undefined) {
       return;
     }
-    const isCheck = board.promote(promotionPawn, pieceType);
-    if (isCheck) {
-      checkSound.play();
-    } else {
-      promoteSound.play();
-    }
+    const result = board.promote(promotionPawn, pieceType);
+    playSound(result);
     setPromotionPawn(undefined);
   }
 
@@ -135,14 +119,23 @@ export default function Referee() {
             />
           </div>
         </div> : null}
-      {board.winningTeam ?
+      {(board.winningTeam || board.staleMate) ?
         <div className='modal'>
           <div className="modal-body">
-            <div className="checkmate-body">
-              <span>
-                The winning team is{" "}
-                {board.winningTeam === TeamType.OUR ? "white" : "black"}!
-              </span>
+            <div className="checkmate-body" style={{ gap: board.staleMate ? '48px' : "" }}>
+              {
+                board.staleMate
+                  ? <div ><b>Stalemate! Draw</b></div>
+                  : <div><div>
+                    The winning team is{" "}
+                    <span style={{ color: board.winningTeam === TeamType.OUR ? "white" : "black" }}>
+                      <b>{board.winningTeam === TeamType.OUR ? "white" : "black"}!</b>
+                    </span>
+                  </div>
+                    <div><img src={`/assets/images/king_${board.winningTeam}.png`} />
+                    </div>
+                  </div>
+              }
               <button onClick={restartGame}>Play again</button>
             </div>
           </div>

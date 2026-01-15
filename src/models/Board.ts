@@ -1,4 +1,4 @@
-import { MoveResult, MoveType, PieceType, TeamType } from "../Types";
+import { CalculatedResult, MoveResult, MoveType, PieceType, TeamType } from "../Types";
 import { invertTeam } from "../utils/typeUtils";
 import { Pawn } from "./piece/Pawn";
 import { Piece } from "./Piece";
@@ -12,6 +12,7 @@ export class Board {
   totalTurns: number;
   enPassantPawn?: Pawn;
   winningTeam?: TeamType;
+  staleMate?: boolean;
   teams = {
     [TeamType.OUR]: new Team(TeamType.OUR),
     [TeamType.OPPONENT]: new Team(TeamType.OPPONENT),
@@ -38,10 +39,8 @@ export class Board {
     return this.totalTurns % 2 === 0 ? TeamType.OPPONENT : TeamType.OUR;
   }
 
-  calculateAllMoves() {
+  calculateAllMoves(): CalculatedResult {
     const currentTeam = this.currentTeam;
-    // Calculate the moves of all the pieces
-    let noMoreMoves = true;
 
     const otherTeam = invertTeam(currentTeam);
     const {
@@ -58,6 +57,9 @@ export class Board {
       piece.calcPossibleMoves();
     }
 
+    // Calculate the moves of all the pieces
+    let noMoreMoves = true;
+
     for (const piece of ourTeam.pieces) {
       let possibleMoves = piece.calcPossibleMoves();
       piece.possibleMoves = possibleMoves;
@@ -68,13 +70,23 @@ export class Board {
 
     ourTeam.king.calculateCastlingMoves();
 
+    let winner, staleMate;
     if (noMoreMoves) {
-      this.winningTeam =
-        this.currentTeam === TeamType.OUR ? TeamType.OPPONENT : TeamType.OUR;
+      if (ourTeam.king.isAttacked) {
+        winner = this.winningTeam = otherTeam;
+      } else {
+        staleMate = this.staleMate = true;
+      }
     }
+    const isCheck = ourTeam.king.isAttacked;
+    return {
+      isCheck,
+      winner,
+      staleMate,
+    };
   }
 
-  promote(pawn: Pawn, pieceType: PieceType) {
+  promote(pawn: Pawn, pieceType: PieceType): MoveResult {
     const newPiece = Piece.make(
       pawn.position,
       pieceType,
@@ -84,10 +96,13 @@ export class Board {
     const newPieces = this.pieces.filter(piece => piece !== pawn);
     newPieces.push(newPiece);
     this.pieces = newPieces;
-    this.calculateAllMoves();
-    const isCheck = !!this.teams[this.currentTeam].king.isAttacked;
-
-    return isCheck;
+    const { isCheck, winner } = this.calculateAllMoves();
+    return {
+      type: MoveType.MOVED,
+      isCheck,
+      winner,
+      promoted: true,
+    };
   }
   playMove(piece: Piece, destination: Position): MoveResult {
     let destinationPiece;
@@ -125,19 +140,16 @@ export class Board {
     }
     piece.position = destination;
     this.pieces = newPieces;
-    this.calculateAllMoves();
-    const isCheck = !!this.teams[this.currentTeam].king.isAttacked;
-    if (destinationPiece) {
-      return {
-        type: MoveType.CAPTURED,
-        isCheck,
-        isCastling,
-      };
-    }
+
+    // Next turn
+    this.totalTurns += 1;
+    const type = destinationPiece ? MoveType.CAPTURED : MoveType.MOVED;
+    const { isCheck, winner } = this.calculateAllMoves();
     return {
-      type: MoveType.MOVED,
+      type,
       isCheck,
-      isCastling
+      isCastling,
+      winner,
     };
   }
 
