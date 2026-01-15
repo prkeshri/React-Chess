@@ -1,4 +1,4 @@
-import { CalculatedResult, MoveResult, MoveType, PieceType, TeamType } from "../Types";
+import { CalculatedResult, MoveResult, MoveType, PieceType, StepOptions, TeamType } from "../Types";
 import { invertTeam } from "../utils/typeUtils";
 import { Pawn } from "./piece/Pawn";
 import { Piece } from "./Piece";
@@ -58,14 +58,14 @@ export class Board {
       piece.freshenUp();
     }
     for (const piece of opponentTeam.pieces) {
-      piece.calcPossibleMoves();
+      this.calcPossibleMovesFor(piece);
     }
 
     // Calculate the moves of all the pieces
     let noMoreMoves = true;
 
     for (const piece of ourTeam.pieces) {
-      let possibleMoves = piece.calcPossibleMoves();
+      let possibleMoves = this.calcPossibleMovesFor(piece);
       piece.possibleMoves = possibleMoves;
       if (possibleMoves.length) {
         noMoreMoves = false;
@@ -88,6 +88,34 @@ export class Board {
       winner,
       staleMate,
     };
+  }
+
+  calcPossibleMovesFor(piece: Piece): Position[] {
+    const possibleMoves: Position[] = [];
+    const Class = piece.constructor as typeof Piece;
+    const steps = piece.getIterSteps();
+    const defIters = Class.iters;
+    let step;
+    const playingTeam = this.currentTeam === piece.team;
+    while (step = steps.pop()) {
+      const stepOptions = step[2] ?? {} as StepOptions;
+      const { canAttack = true, canMove = true, cb, iters = defIters } = stepOptions;
+      const moves = this.getPossibleMovesInDirection({
+        piece,
+        stepX: step[0],
+        stepY: step[1],
+        playingTeam,
+        iters,
+        canAttack,
+        canMove,
+      });
+      if (cb) {
+        cb(moves);
+      }
+      possibleMoves.push(...moves);
+    }
+
+    return possibleMoves;
   }
 
   promote(pawn: Pawn, pieceType: PieceType): MoveResult {
@@ -168,7 +196,7 @@ export class Board {
     piece,
     stepX,
     stepY,
-    once = false,
+    iters = 0,
     playingTeam = true,
     canAttack = true,
     canMove = true,
@@ -176,7 +204,7 @@ export class Board {
     piece: Piece,
     stepX: number,
     stepY: number,
-    once?: boolean,
+    iters?: number,
     playingTeam?: boolean,
     canAttack?: boolean,
     canMove?: boolean,
@@ -186,12 +214,13 @@ export class Board {
     const otherKing = otherTeamRef.king;
     const possibleNextAttacks: Position[] = [];
     const afterKillMoves: Position[] = [];
-    let ranOnce = false;
 
     let { x, y } = piece.position;
     let point!: Position;
     let destPiece: Piece | undefined;
+    let run = 0;
     const init = () => {
+      run++;
       x += stepX; y += stepY; point = new Position(x, y);
       let finder = (p: Piece) => p.samePosition(point);
       if (piece.isPawn && canAttack) {
@@ -209,10 +238,13 @@ export class Board {
       destPiece = this.pieces.find(finder);
     };
     const next = init;
-    const truthy = () => ((once && !ranOnce) || !once) && (x >= 0 && x < 8 && y >= 0 && y < 8);
+    const truthyMain = () => (x >= 0 && x < 8 && y >= 0 && y < 8);
+    let truthy = truthyMain;
+    if (iters) {
+      truthy = () => ((run <= iters) && truthyMain());
+    }
 
     for (init(); truthy(); next()) {
-      ranOnce = true;
       if (destPiece) {
         if (canAttack) {
           if (destPiece.team !== piece.team) {

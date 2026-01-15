@@ -41,6 +41,13 @@ export type MoveResult = CalculatedResult & {
     promoted?: boolean;
 };
 
+export type StepOptions = undefined | {
+    canAttack?: boolean,
+    canMove?: boolean,
+    cb?: Function,
+    iters?: number
+};
+
 export type BoardHistory = {
     state: Board;
     moveResult: MoveResult;

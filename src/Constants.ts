@@ -1,4 +1,3 @@
-import { AtomicBoard } from "./models/AtomicBoard";
 import { Board } from "./models/Board";
 import { Piece } from "./models/Piece";
 import "./models/__registers";

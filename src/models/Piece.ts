@@ -13,7 +13,7 @@ export abstract class Piece {
     restrictedMoves?: Position[];
     board!: Board;
     teamRef!: Team;
-    static iterOnce: boolean = false;
+    static iters: number = 0;
     freshenUp() {
         this.possibleMoves = [];
         this.restrictedMoves = undefined;
@@ -85,35 +85,6 @@ export abstract class Piece {
     }
     getIterSteps(): Array<any> {
         throw new Error("Method not implemented.");
-    }
-
-    calcPossibleMoves(): Position[] {
-        const possibleMoves: Position[] = [];
-        const Class = this.constructor as typeof Piece;
-        const steps = this.getIterSteps();
-        const once = Class.iterOnce;
-        let step;
-        const board = this.board;
-        const playingTeam = board.currentTeam === this.team;
-        while (step = steps.pop()) {
-            const stepOptions = step[2] ?? {} as any;
-            const { canAttack = true, canMove = true, cb } = stepOptions;
-            const moves = board.getPossibleMovesInDirection({
-                piece: this,
-                stepX: step[0],
-                stepY: step[1],
-                playingTeam,
-                once,
-                canAttack,
-                canMove,
-            });
-            if (cb) {
-                cb(moves);
-            }
-            possibleMoves.push(...moves);
-        }
-
-        return possibleMoves;
     }
 
     samePiecePosition(otherPiece: Piece): boolean {

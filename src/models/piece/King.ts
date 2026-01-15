@@ -5,7 +5,7 @@ import { Queen } from "./Queen";
 import { Rook } from "./Rook";
 
 class King extends Piece {
-    static iterOnce = true;
+    static iters = 1;
     isAttacked?: boolean;
     deniedMoves: Position[] = [];
 
