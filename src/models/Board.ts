@@ -477,6 +477,7 @@ export class Board {
           }
           const team = Team.which(n);
           const piece = Piece.make(new Position(x, y), n.toLowerCase() as PieceType, team);
+          piece._hasMoved = true;
           pieces.push(piece);
           x++;
         });
