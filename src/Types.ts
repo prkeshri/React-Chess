@@ -1,5 +1,11 @@
 import { Board } from "./models/Board";
 
+export enum Variants {
+    ATOMIC = "atomic"
+};
+
+export type Variation = undefined | Variants;
+
 export enum PieceType {
     PAWN = 'p',
     BISHOP = 'b',
@@ -37,6 +43,8 @@ export type CalculatedResult = {
     isCheck?: boolean;
     winner?: TeamType;
     staleMate?: boolean;
+    shouldPromote?: boolean;
+    blastWin?: boolean;
 };
 
 export type MoveResult = CalculatedResult & {
@@ -45,12 +53,14 @@ export type MoveResult = CalculatedResult & {
     promoted?: boolean;
 };
 
-export type StepOptions = undefined | {
+export type StepOptions = {
     canAttack?: boolean,
     canMove?: boolean,
     cb?: Function,
     iters?: number
 };
+
+export type IterStepsConfig = [number, number, StepOptions?][];
 
 export type BoardHistory = {
     state: Board;

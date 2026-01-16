@@ -1,19 +1,19 @@
-import { PieceType, TeamType } from "../../Types";
+import { IterStepsConfig, PieceType, StepOptions, TeamType } from "../../Types";
 import { Piece } from "../Piece";
 import { Position } from "../Position";
 
 class Pawn extends Piece {
     static iters = 1;
-    getIterSteps() {
+    getIterSteps(): IterStepsConfig {
         const team = this.team;
         const specialRow = team === TeamType.OUR ? 1 : 6;
         const pawnDirection = team === TeamType.OUR ? 1 : -1;
 
-        const firstStepOptions: any = { canAttack: false };
+        const firstStepOptions: StepOptions = { canAttack: false };
         if (this.position.y === specialRow) {
             firstStepOptions.iters = 2;
         }
-        const steps = [[0, pawnDirection, firstStepOptions],
+        const steps: IterStepsConfig = [[0, pawnDirection, firstStepOptions],
         [1, pawnDirection, { canMove: false }],
         [-1, pawnDirection, { canMove: false }]];
 

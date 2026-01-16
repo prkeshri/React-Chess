@@ -62,3 +62,10 @@
 .tile-highlight-move.chess-piece-tile {
   border-color: rgb(243, 37, 37)
 }
+
+.tile-highlight-blast::after {
+  content: '💥';
+  position: absolute;
+  right: 0;
+  top: 0;
+}

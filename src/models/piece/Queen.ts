@@ -1,8 +1,8 @@
+import { IterStepsConfig } from "../../Types";
 import { Piece } from "../Piece";
-import { Position } from "../Position";
 
 class Queen extends Piece {
-    getIterSteps() {
+    getIterSteps(): IterStepsConfig {
         return [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
     }
 }

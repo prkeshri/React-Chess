@@ -1,3 +1,4 @@
+import { IterStepsConfig, Variants } from "../../Types";
 import { Positions } from "../../utils/position";
 import { Piece } from "../Piece";
 import { Position } from "../Position";
@@ -9,8 +10,12 @@ class King extends Piece {
     isAttacked?: boolean;
     deniedMoves: Position[] = [];
 
-    getIterSteps() {
-        return Queen.prototype.getIterSteps();
+    getIterSteps(): IterStepsConfig {
+        let steps = Queen.prototype.getIterSteps();
+        if (this.board.isVariantAtomic) {
+            steps = steps.map(s => [s[0], s[1], { canAttack: false }]);
+        }
+        return steps;
     }
     freshenUp(): void {
         super.freshenUp();

@@ -1,10 +1,11 @@
+import { IterStepsConfig } from "../../Types";
 import { Piece } from "../Piece";
 import { Position } from "../Position";
 
 class Rook extends Piece {
     horizMove: Position[] = [];
     isAttacked = false;
-    getIterSteps() {
+    getIterSteps(): IterStepsConfig {
         const cb = (m: Position[]) => {
             if (m.length) {
                 this.horizMove = m;

@@ -48,7 +48,7 @@ export default function Referee() {
   function playMove(playedPiece: Piece, destination: Position) {
     // MUST give a valid move
     const moveResult = board.playMove(playedPiece, destination);
-    if (playedPiece.isPawn && destination.isVerticalEdge) {
+    if (moveResult.shouldPromote) {
       setPromotionPawn(playedPiece);
     } else {
       playSound(moveResult);
@@ -103,6 +103,7 @@ export default function Referee() {
           <button onClick={() => doClone()}>Clone Board</button>
           <button onClick={() => { console.log(board.serialize()) }}>PRINT</button>
           <button onClick={() => load()}>LOAD</button>
+          <button onClick={restartGame}>RESET</button>
         </div>
       </div>
       <hr />

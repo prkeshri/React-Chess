@@ -1,9 +1,10 @@
-import { TeamType, PieceType, PieceTypeFull } from "../Types";
+import { TeamType, PieceType, PieceTypeFull, IterStepsConfig } from "../Types";
 import { Board } from "./Board";
 import { Position } from "./Position";
 import { Team } from "./team";
 
 export abstract class Piece {
+    dead?: boolean;
     image: string;
     _position: Position;
     type: PieceType;
@@ -75,7 +76,7 @@ export abstract class Piece {
         return this.teamRef.aptFenBit(this.type);
     }
 
-    getIterSteps(): Array<any> {
+    getIterSteps(): IterStepsConfig {
         throw new Error("Method not implemented.");
     }
 

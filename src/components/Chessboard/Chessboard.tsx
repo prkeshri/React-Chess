@@ -7,6 +7,7 @@ import {
 } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";
+import { Positions } from "../../utils/position";
 
 interface Props {
   playMove: (piece: Piece, position: Position) => void;
@@ -25,7 +26,8 @@ type ActivePieceInfo = {
   parentLT: XY,
   maxX: number,
   offsetXY: XY,
-  lastHover?: Position
+  lastHover?: Position,
+  lastUndeads?: Position[]
 };
 
 export default function Chessboard({ playMove, board: chessBoard }: Props) {
@@ -93,6 +95,7 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
       maxX,
       offsetXY,
       lastHover,
+      lastUndeads,
     } = activePieceInfo;
 
     const minX = 0;
@@ -123,8 +126,32 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
     }
 
     activePieceInfo.lastHover = point;
+    let undeads: Position[] = [];
     if (piece.possibleMoves?.find(p => p.samePosition(point))) {
       tileRerenders[`${point.x}x${point.y}`]?.("move");
+      if (chessBoard.isVariantAtomic) {
+        let enPawn;
+        if (chessBoard.pieceAt(point) || (enPawn = chessBoard.enPassantPawn)?.enPassant?.samePosition(point)) {
+          undeads = chessBoard.getSurroundingUndeads(point).map(p => p._position);
+          if (enPawn) {
+            undeads.push(enPawn.position);
+          }
+        }
+      }
+    }
+    if (chessBoard.isVariantAtomic) {
+      let oldUndeads: Position[] = [], newUndeads: Position[] = undeads;
+      if (lastUndeads?.length) {
+        oldUndeads = Positions.diff(lastUndeads, undeads);
+        newUndeads = Positions.diff(undeads, lastUndeads);
+      }
+      oldUndeads.forEach(p => {
+        tileRerenders[`${p.x}x${p.y}`]?.("");
+      });
+      newUndeads.forEach(p => {
+        tileRerenders[`${p.x}x${p.y}`]?.("blast");
+      });
+      activePieceInfo.lastUndeads = undeads;
     }
   }
 
@@ -137,7 +164,7 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
     if (!moved.current) {
       return;
     }
-    const { piece, element, lastHover } = activePieceInfo;
+    const { piece, element, lastHover, lastUndeads } = activePieceInfo;
     if (lastHover) {
       tileRerenders[`${lastHover.x}x${lastHover.y}`]?.("");
     }
@@ -145,9 +172,12 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
     element.style.position = "relative";
     element.style.removeProperty("top");
     element.style.removeProperty("left");
+    element.style.removeProperty("width");
+    element.style.removeProperty("height");
 
     const target = document.elementsFromPoint(e.clientX, e.clientY).find(e => e.getAttribute('data-x'));
     if (!target) {
+      clean();
       setActivePieceInfo(null);
       return;
     }
@@ -155,9 +185,17 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
     const y = parseInt(target.getAttribute('data-y')!);
 
     if (piece) {
-      playPiece(piece, new Position(x, y));
+      playPiece(piece, new Position(x, y), e.button === 2);
     }
+
+    clean();
     setActivePieceInfo(null);
+
+    function clean() {
+      lastUndeads?.forEach(p => {
+        tileRerenders[`${p.x}x${p.y}`]?.("");
+      });
+    }
   }
 
   function playPiece(piece: Piece, destination: Position, force: boolean = false) {
