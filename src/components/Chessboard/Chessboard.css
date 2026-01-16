@@ -2,8 +2,8 @@
   display: grid;
   grid-template-columns: repeat(8, 12.5%);
   grid-template-rows: repeat(8, 12.5%);
-  width: auto;
-  height: 80vh;
+  width: min(80vw, 80vh);
+  height: min(80vw, 80vh);
   background-color: blue;
   aspect-ratio: 1;
   position: relative;
