@@ -133,7 +133,7 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
       if (chessBoard.isVariantAtomic) {
         let enPawn;
         if (chessBoard.pieceAt(point) || (enPawn = chessBoard.enPassantPawn)?.enPassant?.samePosition(point)) {
-          undeads = (chessBoard as AtomicBoard).getSurroundingUndeads(point).map(p => p._position && p !== piece);
+          undeads = (chessBoard as AtomicBoard).getSurroundingUndeads(point).filter(p => p !== piece).map(p => p._position);
           if (enPawn) {
             undeads.push(enPawn.position);
           }
