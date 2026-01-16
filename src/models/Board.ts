@@ -161,10 +161,21 @@ export class Board {
       // Castling
       this.pieces.some((p) => {
         if (p.samePosition(destination)) {
-          p.position = piece.position;
+          let kingX = piece.position._x,
+            rookX = p.position._x;
+          if (rookX > kingX) {
+            rookX = kingX + 1;
+            kingX += 2;
+          } else {
+            rookX = kingX - 1;
+            kingX -= 2;
+          }
+          piece.position.x = kingX;
+          p.position.x = rookX;
           return true;
         }
       });
+
     } else {
       this.pieces.forEach((p) => {
         if (p.samePosition(destination) || (p === enPassantPawn)) {
@@ -186,13 +197,13 @@ export class Board {
           return true;
         });
       }
+      piece.position = destination;
     }
 
     if (this.enPassantPawn) {
       this.enPassantPawn.enPassant = undefined;
       this.enPassantPawn = undefined;
     }
-    piece.position = destination;
     this.pieces = newPieces;
 
     // Next turn
