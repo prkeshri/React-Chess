@@ -10,6 +10,9 @@
     gap: 2%;
     flex-direction: column;
     position: fixed;
+    z-index: 2;
+    background-color: black;
+    border: solid 10px black;
 }
 
 .thr {

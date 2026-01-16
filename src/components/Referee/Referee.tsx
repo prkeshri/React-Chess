@@ -103,18 +103,7 @@ export default function Referee() {
   return (
     <>
       <div className="controls">
-        <div className="controls-out">
-          <button onClick={() => doClone()}>Clone Board</button>
-          <button onClick={() => { console.log(board.serialize()) }}>Log</button>
-          <button onClick={() => load()}>Load</button>
-          <button onClick={restartGame}>Reset</button>
-          <hr className="thr" />
-          <div style={{ textAlign: 'center', color: 'white', fontSize: '60%' }}>New</div>
-          <hr className="thr" />
-          <button onClick={() => newGame(Variant.REGULAR)}>Regular</button>
-          <button onClick={() => newGame(Variant.ATOMIC)}>Atomic</button>
-
-        </div>
+        <Controls handlers={{ doClone, board, load, restartGame, newGame }} />
       </div>
       <p className={`header ${board.variant}`}>
         {board.variant ? <>{board.variant.toUpperCase()} | </> : ""}Total turns: {board.totalTurns}
@@ -165,3 +154,30 @@ export default function Referee() {
     </>
   );
 }
+function Controls(props: { handlers: any; }) {
+  const {
+    doClone,
+    board,
+    load,
+    restartGame,
+    newGame,
+  } = props.handlers;
+
+  const [expanded, setExpanded] = useState(false);
+  return <div className="controls-out">
+    <button style={{ width: 'fit-content', marginBottom: expanded ? 10 : 0 }} onClick={() => setExpanded(e => !e)}>☰</button>
+    {expanded
+      ? <>
+        <button onClick={() => doClone()}>Clone Board</button>
+        <button onClick={() => { console.log(board.serialize()); }}>Log</button>
+        <button onClick={() => load()}>Load</button>
+        <button onClick={restartGame}>Reset</button>
+        <hr className="thr" />
+        <div style={{ textAlign: 'center', color: 'white', fontSize: '60%' }}>New</div>
+        <hr className="thr" />
+        <button onClick={() => newGame(Variant.REGULAR)}>Regular</button>
+        <button onClick={() => newGame(Variant.ATOMIC)}>Atomic</button>
+      </> : null}
+  </div>;
+}
+
