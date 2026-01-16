@@ -1,9 +1,7 @@
-import { IterStepsConfig, Variants } from "../../Types";
-import { Positions } from "../../utils/position";
+import { IterStepsConfig, Variant } from "../../Types";
 import { Piece } from "../Piece";
 import { Position } from "../Position";
 import { Queen } from "./Queen";
-import { Rook } from "./Rook";
 
 class King extends Piece {
     static iters = 1;

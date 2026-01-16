@@ -1,4 +1,5 @@
 import { TeamType, PieceType, PieceTypeFull, IterStepsConfig } from "../Types";
+import { FactoryMap } from "../utils/utils";
 import { Board } from "./Board";
 import { Position } from "./Position";
 import { Team } from "./team";
@@ -105,7 +106,7 @@ export abstract class Piece {
         //@ts-ignore
         ...rest
     ): Piece {
-        const Class = this.map[type];
+        const Class = this.factory.get(type);
         if (type === PieceType.PAWN) {
             //@ts-ignore
             return new Class(position, team, hasMoved);
@@ -114,8 +115,5 @@ export abstract class Piece {
         return new Class(position, type, team, hasMoved, possibleMoves, ...rest);
     }
 
-    static map: Record<PieceType, typeof Piece> = {} as any;
-    static register(type: PieceType, clazz: any) {
-        this.map[type] = clazz;
-    }
+    static factory = FactoryMap<PieceType, Piece>();
 }

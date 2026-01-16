@@ -1,4 +1,6 @@
-import { PieceType } from "../Types";
+import { PieceType, Variant } from "../Types";
+import { AtomicBoard } from "./AtomicBoard";
+import { Board } from "./Board";
 import { Piece } from "./Piece";
 import { Bishop } from "./piece/Bishop";
 import { King } from "./piece/King";
@@ -7,10 +9,11 @@ import { Pawn } from "./piece/Pawn";
 import { Queen } from "./piece/Queen";
 import { Rook } from "./piece/Rook";
 
-Piece.register(PieceType.QUEEN, Queen);
-Piece.register(PieceType.KING, King);
-Piece.register(PieceType.BISHOP, Bishop);
-Piece.register(PieceType.KNIGHT, Knight);
-Piece.register(PieceType.ROOK, Rook);
-Piece.register(PieceType.PAWN, Pawn);
+Piece.factory.register(PieceType.QUEEN, Queen);
+Piece.factory.register(PieceType.KING, King);
+Piece.factory.register(PieceType.BISHOP, Bishop);
+Piece.factory.register(PieceType.KNIGHT, Knight);
+Piece.factory.register(PieceType.ROOK, Rook);
+Piece.factory.register(PieceType.PAWN, Pawn);
 
+Board.factory.register(Variant.ATOMIC, AtomicBoard);

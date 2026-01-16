@@ -1,4 +1,4 @@
-import { CalculatedResult, MoveResult, MoveType, PieceType, StepOptions, TeamType, TeamTypes } from "../Types";
+import { CalculatedResult, MoveResult, MoveType, PieceType, StepOptions, TeamType, TeamTypes, Variant } from "../Types";
 import { invertTeam } from "../utils/typeUtils";
 import { Pawn } from "./piece/Pawn";
 import { Piece } from "./Piece";
@@ -6,11 +6,14 @@ import { Position } from "./Position";
 import { Team } from "./team";
 import { Positions } from "../utils/position";
 import { King } from "./piece/King";
+import type { AtomicBoard } from "./AtomicBoard";
+import { FactoryMap, getQueryPrefs } from "../utils/utils";
 
 export class Board {
+  variant: Variant = Variant.REGULAR;
   _pieces: Piece[] = [];
-  totalTurns: number;
-  halfMoves: number;
+  totalTurns: number = 1;
+  halfMoves: number = 0;
   enPassantPawn?: Pawn;
   winningTeam?: TeamType;
   staleMate?: boolean;
@@ -31,16 +34,16 @@ export class Board {
       p.teamRef = team;
     });
   }
-  constructor(pieces: Piece[], totalTurns = 0, halfMoves = 0) {
+  protected constructor(pieces: Piece[]) {
     this.pieces = pieces;
-    this.totalTurns = totalTurns;
-    this.halfMoves = halfMoves;
   }
 
   currentTeam: TeamType = TeamType.OUR;
 
-  pieceAt(p: Position) {
-    return this._pieces.find(piece => piece.samePosition(p));
+  pieceAt(p: Position, team?: TeamType) {
+    let arr = this._pieces;
+    if (team) arr = this.teams[team].pieces;
+    return arr.find(piece => piece.samePosition(p));
   }
 
   calculateAllMoves(): CalculatedResult {
@@ -56,6 +59,10 @@ export class Board {
     opponentTeam.freshenUp();
     for (const piece of this.pieces) {
       piece.freshenUp();
+    }
+
+    if (this.isVariantAtomic) {
+      (this as never as AtomicBoard).markSurroundingRestricted(ourTeam.king.position, otherTeam);
     }
     for (const piece of opponentTeam.pieces) {
       this.calcPossibleMovesFor(piece);
@@ -140,6 +147,7 @@ export class Board {
   playMove(piece: Piece, destination: Position): MoveResult {
     let capturedPiece;
     let enPassantPawn = this.enPassantPawn;
+    let aWinner;
     if (!(enPassantPawn && piece.isPawn && destination.samePosition(enPassantPawn.enPassant!))) {
       enPassantPawn = undefined;
     }
@@ -165,6 +173,19 @@ export class Board {
           newPieces.push(p);
         }
       });
+      if (capturedPiece && this.isVariantAtomic) {
+        piece.dead = true;
+        (this as never as AtomicBoard).markSurroundingDead(destination);
+        newPieces = newPieces.filter(p => {
+          if (p.dead) {
+            if (p.isKing) {
+              aWinner = this.winningTeam = piece.team;
+            }
+            return false;
+          }
+          return true;
+        });
+      }
     }
 
     if (this.enPassantPawn) {
@@ -186,12 +207,23 @@ export class Board {
       this.halfMoves++;
       type = MoveType.MOVED;
     }
+
+    if (aWinner) {
+      return {
+        type,
+        winner: aWinner,
+        blastWin: true,
+      };
+    }
     const { isCheck, winner } = this.calculateAllMoves();
+
+    const shouldPromote = !piece.dead && piece.isPawn && destination.isVerticalEdge;
     return {
       type,
       isCheck,
       isCastling,
       winner,
+      shouldPromote,
     };
   }
 
@@ -200,6 +232,10 @@ export class Board {
       this.pieces.map((p) => p.clone()),
       this.totalTurns
     );
+  }
+
+  get isVariantAtomic(): boolean {
+    return this.variant === Variant.ATOMIC;
   }
 
   getPossibleMovesInDirection({
@@ -219,8 +255,10 @@ export class Board {
     canAttack?: boolean,
     canMove?: boolean,
   }) {
+    const isVariantAtomic = this.isVariantAtomic;
     const possibleMoves: Position[] = [];
-    const otherTeamRef = this.teams[invertTeam(piece.team)];
+    const otherTeam = invertTeam(piece.team);
+    const otherTeamRef = this.teams[otherTeam];
     const otherKing = otherTeamRef.king;
     const possibleNextAttacks: Position[] = [];
     const afterKillMoves: Position[] = [];
@@ -258,7 +296,9 @@ export class Board {
       if (destPiece) {
         if (canAttack) {
           if (destPiece.team !== piece.team) {
-            possibleMoves.push(point);
+            if (!isVariantAtomic || !destPiece!.restrictedMoves) {
+              possibleMoves.push(point);
+            }
             if (destPiece.isKing && !playingTeam) {
               if (otherKing.isAttacked) {
                 otherTeamRef.restrictedMoves = [];
@@ -299,10 +339,10 @@ export class Board {
         }));
       }
 
-      if (!destPiece || destPiece.team === piece.team) {
+      if (!destPiece || ((destPiece.team === piece.team) && (!isVariantAtomic || run === 1))) {
         return possibleMoves;
       }
-      if (destPiece.isKing && truthy()) {
+      if ((!isVariantAtomic || destPiece!.team !== piece.team) && destPiece.isKing && truthy()) {
         next();
         if (point) {
           otherKing.deniedMoves.push(point);
@@ -316,7 +356,14 @@ export class Board {
           afterKillMoves.push(point);
         } else {
           if (destPiece.isKing && destPiece.team !== piece.team) {
-            attackedPiece.restrictedMoves = [...possibleMoves, piece.position, ...afterKillMoves];
+            if (isVariantAtomic && attackedPiece.team === piece.team) {
+              attackedPiece.restrictedMoves = []; // Just mark that it cannot be blasted
+              if (!attackedPiece.isPawn) {
+                (this as unknown as AtomicBoard).markSurroundingRestricted(attackedPiece.position, otherTeam);
+              }
+            } else {
+              attackedPiece.restrictedMoves = [...possibleMoves, piece.position, ...afterKillMoves];
+            }
           }
           break;
         }
@@ -337,6 +384,7 @@ export class Board {
       return finalPossibleMoves;
     }
   }
+
   serialize() {
     const arr: (Piece | undefined)[][] = Array.from({ length: 8 }, () => Array.from({ length: 8 }));
     this._pieces.forEach(p => {
@@ -374,7 +422,7 @@ export class Board {
 
     const castleConfigs: string[] = [];
     const calcCastleConfig = (t: Team) => {
-      if (t.king.hasMoved) {
+      if (!t.king || t.king.hasMoved) {
         return;
       }
       if (t.rookR && !t.rookR.hasMoved) {
@@ -423,7 +471,7 @@ export class Board {
         });
       });
 
-      const board = new this(pieces);
+      const board = this.make(pieces);
       board.currentTeam = currentTeam as TeamType;
       if (castles !== '-') {
         castles.split('').forEach(c => {
@@ -462,4 +510,15 @@ export class Board {
       return null;
     }
   }
+
+  static factory = FactoryMap<Variant, typeof Board>();
+
+  static make(pieces: Piece[]) {
+    const { variant } = getQueryPrefs();
+
+    const Class = this.factory.get(variant);
+    return new Class(pieces);
+  }
 }
+
+Board.factory.register(Variant.REGULAR, Board);

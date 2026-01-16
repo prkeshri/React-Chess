@@ -8,6 +8,7 @@ import {
 import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";
 import { Positions } from "../../utils/position";
+import { AtomicBoard } from "../../models/AtomicBoard";
 
 interface Props {
   playMove: (piece: Piece, position: Position) => void;
@@ -132,7 +133,7 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
       if (chessBoard.isVariantAtomic) {
         let enPawn;
         if (chessBoard.pieceAt(point) || (enPawn = chessBoard.enPassantPawn)?.enPassant?.samePosition(point)) {
-          undeads = chessBoard.getSurroundingUndeads(point).map(p => p._position);
+          undeads = (chessBoard as AtomicBoard).getSurroundingUndeads(point).map(p => p._position && p !== piece);
           if (enPawn) {
             undeads.push(enPawn.position);
           }

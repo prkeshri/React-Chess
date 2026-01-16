@@ -1,10 +1,9 @@
 import { Board } from "./models/Board";
 
-export enum Variants {
+export enum Variant {
+    REGULAR = "",
     ATOMIC = "atomic"
 };
-
-export type Variation = undefined | Variants;
 
 export enum PieceType {
     PAWN = 'p',

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { initialBoard } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";
-import { BoardHistory, MoveType, PieceType, TeamType } from "../../Types";
+import { BoardHistory, MoveType, PieceType, TeamType, Variant } from "../../Types";
 import Chessboard from "../Chessboard/Chessboard";
 import { createHistory } from "../../utils/history";
 import { useRefX, useRenderer } from "../../utils/utils";
@@ -66,6 +66,10 @@ export default function Referee() {
     const hash = board.serialize();
     window.open(window.location.href.split('#')[0] + '#' + hash, "_blank");
   }
+  function newGame(v: Variant) {
+    window.open(window.location.href.split(/\#|\?/)[0] + (v ? '?v=' + v : ''));
+  }
+
   function promotePawn(pieceType: PieceType) {
     if (promotionPawn === undefined) {
       return;
@@ -101,14 +105,19 @@ export default function Referee() {
       <div className="controls">
         <div className="controls-out">
           <button onClick={() => doClone()}>Clone Board</button>
-          <button onClick={() => { console.log(board.serialize()) }}>PRINT</button>
-          <button onClick={() => load()}>LOAD</button>
-          <button onClick={restartGame}>RESET</button>
+          <button onClick={() => { console.log(board.serialize()) }}>Log</button>
+          <button onClick={() => load()}>Load</button>
+          <button onClick={restartGame}>Reset</button>
+          <hr className="thr" />
+          <div style={{ textAlign: 'center', color: 'white', fontSize: '60%' }}>New</div>
+          <hr className="thr" />
+          <button onClick={() => newGame(Variant.REGULAR)}>Regular</button>
+          <button onClick={() => newGame(Variant.ATOMIC)}>Atomic</button>
+
         </div>
       </div>
-      <hr />
-      <p style={{ color: "white", fontSize: "24px", textAlign: "center" }}>
-        Total turns: {board.totalTurns}
+      <p className={`header ${board.variant}`}>
+        {board.variant ? <>{board.variant.toUpperCase()} | </> : ""}Total turns: {board.totalTurns}
       </p>
       {promotionPawn ?
         <div className='modal'>
