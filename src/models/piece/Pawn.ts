@@ -6,8 +6,8 @@ class Pawn extends Piece {
     static iters = 1;
     getIterSteps(): IterStepsConfig {
         const team = this.team;
-        const specialRow = team === TeamType.OUR ? 1 : 6;
-        const pawnDirection = team === TeamType.OUR ? 1 : -1;
+        const specialRow = team === TeamType.WHITE ? 1 : 6;
+        const pawnDirection = team === TeamType.WHITE ? 1 : -1;
 
         const firstStepOptions: StepOptions = { canAttack: false };
         if (this.position.y === specialRow) {

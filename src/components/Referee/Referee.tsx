@@ -13,6 +13,7 @@ export default function Referee() {
   const rerender = useRenderer();
   const boardRef = useRefX<Board>(initialBoard);
   const { current: board } = boardRef;
+  const [myTeam, setMyTeam] = useState("w");
   const [history] = useState(() => createHistory<BoardHistory>({
     state: board,
     moveResult: {
@@ -44,7 +45,9 @@ export default function Referee() {
     return () => window.removeEventListener("hashchange", hashChangeEvent);
   }, []);
   const [promotionPawn, setPromotionPawn] = useState<Piece>();
+  const [rotated, setRotated] = useState(false);
 
+  const finalRotated = myTeam === TeamType.WHITE ? rotated : !rotated;
   function playMove(playedPiece: Piece, destination: Position) {
     // MUST give a valid move
     const moveResult = board.playMove(playedPiece, destination);
@@ -103,7 +106,7 @@ export default function Referee() {
   return (
     <>
       <div className="controls">
-        <Controls handlers={{ doClone, board, load, restartGame, newGame }} />
+        <Controls values={{ myTeam, rotated }} handlers={{ setMyTeam, setRotated, doClone, board, load, restartGame, newGame }} />
       </div>
       <p className={`header ${board.variant}`}>
         {board.variant ? <>{board.variant.toUpperCase()} | </> : ""}Total turns: {board.totalTurns}
@@ -138,8 +141,8 @@ export default function Referee() {
                   ? <div ><b>Stalemate! Draw</b></div>
                   : <div><div>
                     The winning team is{" "}
-                    <span style={{ color: board.winningTeam === TeamType.OUR ? "white" : "black" }}>
-                      <b>{board.winningTeam === TeamType.OUR ? "white" : "black"}!</b>
+                    <span style={{ color: board.winningTeam === TeamType.WHITE ? "white" : "black" }}>
+                      <b>{board.winningTeam === TeamType.WHITE ? "white" : "black"}!</b>
                     </span>
                   </div>
                     <div><img src={`/assets/images/king_${board.winningTeam}.png`} />
@@ -150,34 +153,55 @@ export default function Referee() {
             </div>
           </div>
         </div> : null}
-      <Chessboard playMove={playMove} board={board} />
+      <Chessboard playMove={playMove} board={board} rotated={finalRotated} />
     </>
   );
 }
-function Controls(props: { handlers: any; }) {
+
+function Controls(props: { handlers: any; values: any; }) {
   const {
-    doClone,
-    board,
-    load,
-    restartGame,
-    newGame,
-  } = props.handlers;
+    handlers: {
+      doClone,
+      board,
+      load,
+      restartGame,
+      newGame,
+      setRotated,
+      setMyTeam,
+    }, values: {
+      myTeam,
+      rotated,
+    }
+  } = props;
 
   const [expanded, setExpanded] = useState(false);
   return <div className="controls-out">
-    <button style={{ width: 'fit-content', marginBottom: expanded ? 10 : 0 }} onClick={() => setExpanded(e => !e)}>☰</button>
+    <div style={{ display: 'flex', marginBottom: expanded ? 10 : 0 }}>
+      <button onClick={() => setExpanded(e => !e)}>☰</button>
+      <button style={{ backgroundColor: rotated ? "#9b9595" : "" }} onClick={() => setRotated((e: boolean) => !e)}>↺</button>
+    </div>
     {expanded
       ? <>
         <button onClick={() => doClone()}>Clone Board</button>
         <button onClick={() => { console.log(board.serialize()); }}>Log</button>
         <button onClick={() => load()}>Load</button>
         <button onClick={restartGame}>Reset</button>
-        <hr className="thr" />
-        <div style={{ textAlign: 'center', color: 'white', fontSize: '60%' }}>New</div>
-        <hr className="thr" />
+        <Title>New</Title>
         <button onClick={() => newGame(Variant.REGULAR)}>Regular</button>
         <button onClick={() => newGame(Variant.ATOMIC)}>Atomic</button>
+        <Title>Team</Title>
+        <select name="teamSel" value={myTeam} onChange={(e) => setMyTeam(e.target.value)}>
+          <option value="b">Black</option>
+          <option value="w">White</option>
+        </select>
       </> : null}
   </div>;
 }
 
+const Title = ({ children }: any) => {
+  return (
+    <div className="centered-text-container">
+      <span className="centered-text">{children}</span>
+    </div>
+  );
+}

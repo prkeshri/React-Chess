@@ -13,6 +13,7 @@ import { AtomicBoard } from "../../models/AtomicBoard";
 interface Props {
   playMove: (piece: Piece, position: Position) => void;
   board: Board;
+  rotated: boolean;
 }
 type XY = {
   x: number;
@@ -31,8 +32,7 @@ type ActivePieceInfo = {
   lastUndeads?: Position[]
 };
 
-export default function Chessboard({ playMove, board: chessBoard }: Props) {
-  const { pieces } = chessBoard;
+export default function Chessboard({ rotated, playMove, board: chessBoard }: Props) {
   const [activePieceInfo, setActivePieceInfo] = useState<ActivePieceInfo | null>(null);
   const { current: tileRerenders } = useRef<Record<string, any>>({});
   const moved = useRef<any>(null);
@@ -208,9 +208,20 @@ export default function Chessboard({ playMove, board: chessBoard }: Props) {
   }
 
   let board = [];
-
-  for (let j = VERTICAL_AXIS.length - 1; j >= 0; j--) {
-    for (let i = 0; i < HORIZONTAL_AXIS.length; i++) {
+  let I0, ISTEP, J0, JSTEP;
+  if (rotated) {
+    I0 = 7;
+    ISTEP = -1;
+    J0 = 0;
+    JSTEP = 1;
+  } else {
+    I0 = 0;
+    ISTEP = 1;
+    J0 = 7;
+    JSTEP = -1;
+  }
+  for (let j = J0; j >= 0 && j <= 7; j += JSTEP) {
+    for (let i = I0; i >= 0 && i <= 7; i += ISTEP) {
       const number = j + i + 2;
       const piece = chessBoard.pieceAt(new Position(i, j));
       const currentPiece = activePieceInfo?.piece;

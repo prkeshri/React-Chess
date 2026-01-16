@@ -18,8 +18,8 @@ export class Board {
   winningTeam?: TeamType;
   staleMate?: boolean;
   teams = {
-    [TeamType.OUR]: new Team(TeamType.OUR),
-    [TeamType.OPPONENT]: new Team(TeamType.OPPONENT),
+    [TeamType.WHITE]: new Team(TeamType.WHITE),
+    [TeamType.BLACK]: new Team(TeamType.BLACK),
   }
   get pieces() {
     return this._pieces;
@@ -38,7 +38,7 @@ export class Board {
     this.pieces = pieces;
   }
 
-  currentTeam: TeamType = TeamType.OUR;
+  currentTeam: TeamType = TeamType.WHITE;
 
   pieceAt(p: Position, team?: TeamType) {
     let arr = this._pieces;
@@ -501,7 +501,7 @@ export class Board {
       }
 
       board.halfMoves = parseInt(halfMoves);
-      const total = (parseInt(fullMoves) * 2) + (currentTeam === TeamType.OUR ? -1 : 0)
+      const total = (parseInt(fullMoves) * 2) + (currentTeam === TeamType.WHITE ? -1 : 0)
       board.totalTurns = total;
 
       board.calculateAllMoves();

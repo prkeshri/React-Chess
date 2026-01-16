@@ -1,5 +1,5 @@
 import { TeamType } from "../Types"
 
 export const invertTeam = (value: TeamType): TeamType => {
-    return value === TeamType.OUR ? TeamType.OPPONENT : TeamType.OUR;
+    return value === TeamType.WHITE ? TeamType.BLACK : TeamType.WHITE;
 }

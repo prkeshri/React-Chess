@@ -40,14 +40,14 @@ export class Team {
     }
 
     aptFenBit(c: string) {
-        if (this.type === TeamType.OUR) {
+        if (this.type === TeamType.WHITE) {
             c = c.toUpperCase();
         }
         return c;
     }
 
     static which(n: string): TeamType {
-        const team = n.charCodeAt(0) >= 97 ? TeamType.OPPONENT : TeamType.OUR;
+        const team = n.charCodeAt(0) >= 97 ? TeamType.BLACK : TeamType.WHITE;
         return team;
     }
 
