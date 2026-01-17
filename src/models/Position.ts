@@ -17,6 +17,9 @@ export class Position {
             this._y === otherPosition._y;
     }
 
+    isBeside(otherPosition: Position): boolean {
+        return (Math.abs(otherPosition._x - this._x) <= 1 && Math.abs(otherPosition._y - this._y) <= 1);
+    }
     with(p: Piece) {
         this.piece = p;
         return this;

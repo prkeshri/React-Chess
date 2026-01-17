@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Variant } from "../Types";
+import { Position } from "../models";
 
 export function useRenderer() {
     const [, x] = useState(false);

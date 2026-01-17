@@ -1,4 +1,5 @@
 import { IterStepsConfig, Variant } from "../../Types";
+import { invertTeam } from "../../utils/typeUtils";
 import { Piece } from "../Piece";
 import { Position } from "../Position";
 import { Queen } from "./Queen";
@@ -54,6 +55,11 @@ class King extends Piece {
             });
         }
         this.possibleMoves = [...(this.possibleMoves ?? []), ...cMoves];
+    }
+
+    isAtomicSafe(otherKingPos?: Position) {
+        otherKingPos = otherKingPos ?? this.board.teams[invertTeam(this.team)].king._position;
+        return otherKingPos.isBeside(this._position);
     }
 }
 

@@ -292,6 +292,8 @@ export class Board {
     const otherTeam = invertTeam(piece.team);
     const otherTeamRef = this.teams[otherTeam];
     const otherKing = otherTeamRef.king;
+    const myKingPos = this.teams[piece.team].king._position;
+    const isVariantAtomicAndOtherKingSafe = isVariantAtomic && !playingTeam && otherKing.isAtomicSafe(myKingPos);
     const possibleNextAttacks: Position[] = [];
     const afterKillMoves: Position[] = [];
 
@@ -332,12 +334,14 @@ export class Board {
               possibleMoves.push(point);
             }
             if (destPiece.isKing && !playingTeam) {
-              if (otherKing.isAttacked) {
-                otherTeamRef.restrictedMoves = [];
-              } else {
-                otherKing.isAttacked = true;
-                otherTeamRef.restrictedMoves = otherTeamRef.restrictedMoves ?? [];
-                otherTeamRef.restrictedMoves.push(...possibleMoves, piece.position);
+              if (!isVariantAtomicAndOtherKingSafe) {
+                if (otherKing.isAttacked) {
+                  otherTeamRef.restrictedMoves = [];
+                } else {
+                  otherKing.isAttacked = true;
+                  otherTeamRef.restrictedMoves = otherTeamRef.restrictedMoves ?? [];
+                  otherTeamRef.restrictedMoves.push(...possibleMoves, piece.position);
+                }
               }
             }
           } else {
@@ -361,11 +365,10 @@ export class Board {
       }
 
       if (kingDenies.length) {
-        const otherKingMoved = !otherKing.hasMoved;
-        const { x, y } = otherKing.position;
+        const otherKingUnMoved = !otherKing.hasMoved;
         otherKing.deniedMoves.push(...kingDenies.filter(p => {
-          if ((otherKingMoved && (p._y === 0 || p._y === 7)) || (Math.abs(x - p._x) <= 1 && Math.abs(y - p._y) <= 1)) {
-            return true;
+          if ((otherKingUnMoved && (p._y === 0 || p._y === 7)) || p.isBeside(otherKing.position)) {
+            return !isVariantAtomic || !p.isBeside(myKingPos);
           }
           return false;
         }));
@@ -374,11 +377,14 @@ export class Board {
       if (!destPiece || ((destPiece.team === piece.team) && (!isVariantAtomic || run === 1))) {
         return possibleMoves;
       }
-      if ((!isVariantAtomic || destPiece!.team !== piece.team) && destPiece.isKing && truthy()) {
+      if ((!isVariantAtomic || destPiece!.team !== piece.team && !piece.isKing) && destPiece.isKing && truthy()) {
         next();
-        if (point) {
+        if (point && (!isVariantAtomic || !point.isBeside(myKingPos))) {
           otherKing.deniedMoves.push(point);
         }
+        return possibleMoves;
+      }
+      if (isVariantAtomicAndOtherKingSafe) {
         return possibleMoves;
       }
 
