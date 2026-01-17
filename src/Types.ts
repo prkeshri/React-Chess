@@ -1,4 +1,5 @@
 import { Board } from "./models/Board";
+import { Team } from "./models/team";
 
 export enum Variant {
     REGULAR = "",
@@ -31,6 +32,11 @@ export enum TeamType {
     BLACK = 'b',
     WHITE = 'w',
 }
+
+export type TimedGame = {
+    total: number,
+    plus?: number
+};
 
 export enum MoveType {
     MOVED = 'moved',

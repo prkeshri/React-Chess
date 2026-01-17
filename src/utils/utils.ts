@@ -20,7 +20,17 @@ export function getQueryPrefs() {
     let v = params.get("v") ?? "";
     if (Array.isArray(v)) v = v[0];
     const variant: Variant = v as Variant;
-    return { variant };
+
+    let timers;
+    let t: any = params.get("t");
+    if (t) {
+        t = t.split(",");
+        t = t.map((t: string) => parseInt(t, 10));
+        if (!t.find((n: number) => isNaN(n))) {
+            timers = t;
+        }
+    }
+    return { variant, timers };
 }
 
 export function FactoryMap<S extends string, T>() {

@@ -1,0 +1,18 @@
+.timer {
+    color: white;
+    position: absolute;
+    right: -10px;
+    translate: 100%;
+    background: gray;
+    padding: 8px;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+.timer-top {
+    top: 0;
+}
+
+.timer-bottom {
+    bottom: 0;
+}

@@ -1,4 +1,4 @@
-import { CalculatedResult, MoveResult, MoveType, PieceType, StepOptions, TeamType, TeamTypes, Variant } from "../Types";
+import { CalculatedResult, MoveResult, MoveType, PieceType, StepOptions, TeamType, TeamTypes, TimedGame, Variant } from "../Types";
 import { invertTeam } from "../utils/typeUtils";
 import { Pawn } from "./piece/Pawn";
 import { Piece } from "./Piece";
@@ -17,7 +17,7 @@ export class Board {
   enPassantPawn?: Pawn;
   winningTeam?: TeamType;
   staleMate?: boolean;
-  teams = {
+  teams: Record<TeamType, Team> = {
     [TeamType.WHITE]: new Team(TeamType.WHITE),
     [TeamType.BLACK]: new Team(TeamType.BLACK),
   }
@@ -38,6 +38,7 @@ export class Board {
     this.pieces = pieces;
   }
 
+  timedGame?: TimedGame;
   currentTeam: TeamType = TeamType.WHITE;
 
   pieceAt(p: Position, team?: TeamType) {
@@ -148,12 +149,12 @@ export class Board {
     let capturedPiece;
     let enPassantPawn = this.enPassantPawn;
     let aWinner;
-    if (!(enPassantPawn && piece.isPawn && destination.samePosition(enPassantPawn.enPassant!))) {
-      enPassantPawn = undefined;
-    }
 
     let newPieces: Piece[] = [];
     let isCastling = false;
+    if (!(enPassantPawn && piece.isPawn && destination.samePosition(enPassantPawn.enPassant!))) {
+      enPassantPawn = undefined;
+    }
 
     if (piece.isKing && Math.abs(piece.position.x - destination.x) > 1) {
       newPieces = this.pieces; // No Change!
@@ -197,13 +198,17 @@ export class Board {
           return true;
         });
       }
-      piece.position = destination;
     }
 
     if (this.enPassantPawn) {
       this.enPassantPawn.enPassant = undefined;
       this.enPassantPawn = undefined;
     }
+
+    if (!isCastling) {
+      piece.position = destination;
+    }
+
     this.pieces = newPieces;
 
     // Next turn
@@ -219,6 +224,10 @@ export class Board {
       type = MoveType.MOVED;
     }
 
+    const timedPlus = this.timedGame?.plus;
+    if (timedPlus) {
+      this.teams[this.currentTeam].remaining += timedPlus;
+    }
     if (aWinner) {
       return {
         type,
@@ -456,13 +465,17 @@ export class Board {
 
     const fullMoves = Math.ceil(this.totalTurns / 2);
     fields.push(fullMoves);
-
+    const timedGame = this.timedGame;
+    if (timedGame) {
+      const t = [timedGame.total, timedGame.plus, this.teams.w.remaining, this.teams.b.remaining].join(",");
+      fields.push(t)
+    }
     return fields.join(' ');
   }
 
   static deserialize(fen: string) {
     try {
-      const [rows$, currentTeam, castles, enPassant, halfMoves, fullMoves] = fen.split(' ');
+      const [rows$, currentTeam, castles, enPassant, halfMoves, fullMoves, times] = fen.split(' ');
       const rows = rows$.split('/');
       let y = 8;
       const pieces: Piece[] = [];
@@ -512,6 +525,17 @@ export class Board {
         }
       }
 
+      if (times) {
+        const [total, plus, wRemaining, bRemaining] = times.split(',').map(t => parseInt(t)).map(i => isNaN(i) ? 0 : i);
+        board.timedGame = {
+          total,
+          plus
+        };
+
+        board.teams.w.remaining = wRemaining;
+        board.teams.b.remaining = bRemaining;
+      }
+
       board.halfMoves = parseInt(halfMoves);
       const total = (parseInt(fullMoves) * 2) + (currentTeam === TeamType.WHITE ? -1 : 0)
       board.totalTurns = total;
@@ -526,10 +550,21 @@ export class Board {
   static factory = FactoryMap<Variant, typeof Board>();
 
   static make(pieces: Piece[]) {
-    const { variant } = getQueryPrefs();
+    const { variant, timers } = getQueryPrefs();
 
     const Class = this.factory.get(variant);
-    return new Class(pieces);
+    const board = new Class(pieces);
+    if (timers) {
+      const total = timers[0];
+      board.timedGame = {
+        total,
+        plus: timers[1] ?? 0,
+      }
+
+      Object.values(board.teams).forEach(teamRef => teamRef.remaining = total);
+    }
+
+    return board;
   }
 }
 

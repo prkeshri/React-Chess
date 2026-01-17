@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Children, useEffect, useRef, useState } from "react";
 import { initialBoard } from "../../Constants";
 import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";
@@ -8,11 +8,21 @@ import { createHistory } from "../../utils/history";
 import { useRefX, useRenderer } from "../../utils/utils";
 import { playSound, gameStartSound } from "./sounds";
 import "./Referee.css";
+import { Timer } from "./Timer";
+import { useStartTimer } from "../../utils/timer";
 
 export default function Referee() {
   const rerender = useRenderer();
+
   const boardRef = useRefX<Board>(initialBoard);
   const { current: board } = boardRef;
+
+  const fenNotation = useRef("");
+  function calculateHash() {
+    window.location.hash = fenNotation.current = board.serialize();
+  }
+  const { addRef, clearTimer } = useStartTimer(board, rerender, calculateHash);
+
   const [myTeam, setMyTeam] = useState("w");
   const [history] = useState(() => createHistory<BoardHistory>({
     state: board,
@@ -21,7 +31,6 @@ export default function Referee() {
     },
   }));
 
-  const fenNotation = useRef("");
   useEffect(() => {
     const hashChangeEvent = () => {
       let hash = decodeURIComponent(window.location.hash ?? '');
@@ -44,6 +53,7 @@ export default function Referee() {
 
     return () => window.removeEventListener("hashchange", hashChangeEvent);
   }, []);
+
   const [promotionPawn, setPromotionPawn] = useState<Piece>();
   const [rotated, setRotated] = useState(false);
 
@@ -51,11 +61,14 @@ export default function Referee() {
   function playMove(playedPiece: Piece, destination: Position) {
     // MUST give a valid move
     const moveResult = board.playMove(playedPiece, destination);
+    if (moveResult.winner && board.timedGame) {
+      clearTimer();
+    }
     if (moveResult.shouldPromote) {
       setPromotionPawn(playedPiece);
     } else {
       playSound(moveResult);
-      window.location.hash = fenNotation.current = board.serialize();
+      calculateHash();
     }
     rerender();
 
@@ -66,7 +79,7 @@ export default function Referee() {
   }
 
   function doClone() {
-    const hash = board.serialize();
+    const hash = window.location.hash.substring(1);
     window.open(window.location.href.split('#')[0] + '#' + hash, "_blank");
   }
   function newGame(v: Variant) {
@@ -80,7 +93,7 @@ export default function Referee() {
     const result = board.promote(promotionPawn, pieceType);
     playSound(result);
     setPromotionPawn(undefined);
-    window.location.hash = board.serialize();
+    calculateHash();
   }
 
   function restartGame() {
@@ -103,14 +116,35 @@ export default function Referee() {
     rerender();
   }
 
+  function configTiming() {
+    const t = prompt("Enter time in total,plus ( Will reset for all players ):");
+    if (!t?.length) {
+      return;
+    }
+    const [total, plus] = t.split(',').map(t => parseInt(t)).map(i => isNaN(i) ? 0 : i);
+    if (!total) {
+      alert("Invalid!");
+      return;
+    }
+    board.timedGame = {
+      total,
+      plus
+    };
+
+    board.teams.w.remaining = board.teams.b.remaining = total;
+    rerender();
+  }
+
   return (
     <>
       <div className="controls">
-        <Controls values={{ myTeam, rotated }} handlers={{ setMyTeam, setRotated, doClone, board, load, restartGame, newGame }} />
+        <LeftPanel values={{ myTeam, rotated }} handlers={{ configTiming, setMyTeam, setRotated, doClone, board, load, restartGame, newGame }}>
+
+          <h3 className={`header ${board.variant}`}>
+            {board.variant ? <div>{board.variant.toUpperCase()}</div> : ""}Total turns: {board.totalTurns}
+          </h3>
+        </LeftPanel>
       </div>
-      <p className={`header ${board.variant}`}>
-        {board.variant ? <>{board.variant.toUpperCase()} | </> : ""}Total turns: {board.totalTurns}
-      </p>
       {promotionPawn ?
         <div className='modal'>
           <div className="modal-body">
@@ -153,12 +187,23 @@ export default function Referee() {
             </div>
           </div>
         </div> : null}
-      <Chessboard playMove={playMove} board={board} rotated={finalRotated} />
+      <div className="board-container">
+        {board.timedGame ?
+          Object.entries(board.teams).map(([t, teamRef]) => {
+            return (
+              <Timer team={t as TeamType} rotated={finalRotated} key={`timer-${t}`} init={teamRef.remaining} setter={(s: any) => addRef(t as TeamType, s)} />
+            )
+          })
+
+          : null}
+
+        <Chessboard playMove={playMove} board={board} rotated={finalRotated} />
+      </div>
     </>
   );
 }
 
-function Controls(props: { handlers: any; values: any; }) {
+function LeftPanel(props: { handlers: any; values: any; children: any; }) {
   const {
     handlers: {
       doClone,
@@ -167,21 +212,24 @@ function Controls(props: { handlers: any; values: any; }) {
       restartGame,
       newGame,
       setRotated,
+      configTiming,
       setMyTeam,
     }, values: {
       myTeam,
       rotated,
-    }
+    },
+    children
   } = props;
 
   const [expanded, setExpanded] = useState(false);
   return <div className="controls-out">
-    <div style={{ display: 'flex', marginBottom: expanded ? 10 : 0 }}>
-      <button onClick={() => setExpanded(e => !e)}>☰</button>
-      <button style={{ backgroundColor: rotated ? "#9b9595" : "" }} onClick={() => setRotated((e: boolean) => !e)}>↺</button>
+    {children}
+    <div className="main">
+      <button className="square" onClick={() => setExpanded(e => !e)}>☰</button>
+      <button className="square" style={{ backgroundColor: rotated ? "#9b9595" : "" }} onClick={() => setRotated((e: boolean) => !e)}>↺</button>
     </div>
     {expanded
-      ? <>
+      ? <div className="expanded">
         <button onClick={() => doClone()}>Clone Board</button>
         <button onClick={() => { console.log(board.serialize()); }}>Log</button>
         <button onClick={() => load()}>Load</button>
@@ -194,7 +242,9 @@ function Controls(props: { handlers: any; values: any; }) {
           <option value="b">Black</option>
           <option value="w">White</option>
         </select>
-      </> : null}
+        <Title>Timing</Title>
+        <button onClick={() => configTiming()}>Timed</button>
+      </div> : null}
   </div>;
 }
 

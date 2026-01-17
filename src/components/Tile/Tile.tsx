@@ -9,6 +9,7 @@ interface Props {
   clicked: boolean;
   sameTeam?: boolean;
   onRender: (setter: any) => void;
+  hasMoves: boolean;
 }
 
 export default function Tile({
@@ -18,6 +19,7 @@ export default function Tile({
   highlight,
   ij: { i, j },
   clicked,
+  hasMoves,
   onRender,
 }: Props) {
   const [highlighter, setHighlighter] = useState('');
@@ -41,12 +43,13 @@ export default function Tile({
   }
   return (
     <div className={className} data-x={i} data-y={j} style={style}>
-      <div style={{ position: 'absolute', left: '10%', top: '10%', fontSize: '50%' }}>
-        {String.fromCharCode(i + 97)}{j + 1}
+      <div className="notation">
+        <div>{String.fromCharCode(i + 97)}{j + 1}</div>
       </div>
       {
         image
-          ? <div style={{ backgroundImage: `url(${image})` }} className="chess-piece" />
+          ? <div style={{ backgroundImage: `url(${image})` }}
+            className={`chess-piece ${hasMoves ? 'has-moves' : ''}`} />
           : null
       }
     </div>

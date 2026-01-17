@@ -12,12 +12,12 @@
   z-index: 2;
 }
 
-.tile .chess-piece:hover {
+.tile .has-moves:hover {
   cursor: grab;
 }
 
-.tile .chess-piece:active {
-  cursor: grabbing;
+.tile .moving {
+  cursor: grabbing !important;
 }
 
 .black-tile {
@@ -57,6 +57,17 @@
   left: 50%;
   top: 50%;
   translate: -50% -50%;
+}
+
+.tile .notation {
+  position: relative;
+}
+
+.tile .notation>div {
+  position: absolute;
+  left: 10%;
+  top: 10%;
+  font-size: 50%;
 }
 
 .tile-highlight-move.chess-piece-tile {

@@ -21,13 +21,12 @@ type XY = {
 };
 
 type ActivePieceInfo = {
-  position: Position,
   piece: Piece,
   element: HTMLElement,
-  width: number,
-  parentLT: XY,
-  maxX: number,
-  offsetXY: XY,
+  minXY: XY,
+  maxXY: XY,
+  initXY: XY,
+  elementXY: XY,
   lastHover?: Position,
   lastUndeads?: Position[]
 };
@@ -64,22 +63,31 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
     element.style.width = `${element.clientWidth}px`;
     element.style.height = `${element.clientWidth}px`;
 
-    const rect = element.getBoundingClientRect();
-    const width = rect.width;
+    const elementRect = element.getBoundingClientRect();
+    const width = elementRect.width;
+
+    const chessRect = chessboard.getBoundingClientRect();
+
+    const parentRect = element.parentElement!.getBoundingClientRect();
     setActivePieceInfo({
-      offsetXY: {
-        x: e.clientX - rect.x,
-        y: e.clientY - rect.y,
+      minXY: {
+        x: chessRect.left,
+        y: chessRect.top,
       },
-      position,
+      maxXY: {
+        x: chessRect.left + chessboard.clientWidth - width,
+        y: chessRect.top + chessboard.clientHeight - width
+      },
+      initXY: {
+        x: e.clientX,
+        y: e.clientY,
+      },
+      elementXY: {
+        x: elementRect.left,
+        y: elementRect.top,
+      },
       piece,
       element,
-      width,
-      parentLT: {
-        x: parent.offsetLeft,
-        y: parent.offsetTop
-      },
-      maxX: chessboard.clientWidth - width,
     })
   }
 
@@ -92,25 +100,37 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
     const {
       piece,
       element,
-      parentLT,
-      maxX,
-      offsetXY,
+      minXY,
+      maxXY,
+      initXY,
+      elementXY,
       lastHover,
       lastUndeads,
     } = activePieceInfo;
 
-    const minX = 0;
-    const eX = e.clientX - chessboard.offsetLeft - offsetXY.x;
+    const { clientX: mouseX, clientY: mouseY } = e;
 
-    const minY = 0;
-    const maxY = chessboard.clientHeight;
-    const eY = e.clientY - chessboard.offsetTop - offsetXY.y;
+    const diffY = mouseY - initXY.y;
+    const diffX = mouseX - initXY.x;
+
+    const eX = elementXY.x + diffX + 5 // Border;
+    if (eX < minXY.x || eX > maxXY.x) {
+      return;
+    }
+    const eY = elementXY.y + diffY + 5;
+    if (eY < minXY.y || eY > maxXY.y) {
+      return
+    };
+
+    const x = diffX;
+    const y = diffY;
     element.style.position = "absolute";
-
-    const x = Math.min(Math.max(minX, eX), maxX) - parentLT.x;
-    const y = Math.min(Math.max(minY, eY), maxY) - parentLT.y;
     element.style.left = `${x}px`;
     element.style.top = `${y}px`;
+
+    console.log("elementXY.y = " + elementXY.y, " diffY = " + diffY, " eY = " + eY, " minXY.y = " + minXY.y, " element.getBoundingClientRect().y = " + element.getBoundingClientRect().y)
+
+    element.classList.add('moving');
 
     const target = document.elementsFromPoint(e.clientX, e.clientY).find(e => e.getAttribute('data-x'));
     if (!target) {
@@ -175,6 +195,7 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
     element.style.removeProperty("left");
     element.style.removeProperty("width");
     element.style.removeProperty("height");
+    element.classList.remove('moving');
 
     const target = document.elementsFromPoint(e.clientX, e.clientY).find(e => e.getAttribute('data-x'));
     if (!target) {
@@ -231,6 +252,7 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
       board.push(<Tile
         sameTeam={currentPiece?.team === piece?.team}
         clicked={!!(currentPiece && currentPiece === piece)}
+        hasMoves={!!piece?.possibleMoves?.length}
         key={`${j}x${i}`}
         ij={{ i, j }}
         image={image}
@@ -251,6 +273,7 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
         onMouseUp={(e) => dropPiece(e)}
         id="chessboard"
         ref={chessboardRef}
+        className={chessBoard.isVariantAtomic ? 'atomic' : ''}
       >
         {board}
       </div>

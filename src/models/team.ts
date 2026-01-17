@@ -5,6 +5,7 @@ import { Rook } from "./piece/Rook";
 import { Position } from "./Position";
 
 export class Team {
+    remaining: number = 0;
     type: TeamType;
     pieces: Piece[] = [];
     king!: King;

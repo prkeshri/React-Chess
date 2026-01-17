@@ -1,6 +1,11 @@
 #app {
-    display: grid;
-    place-content: center;
+    display: flex;
     height: 100vh;
     background-color: #202020;
+    align-items: center;
+    justify-content: center;
+}
+
+body {
+    background-color: black;
 }

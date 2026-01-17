@@ -2,12 +2,19 @@
   display: grid;
   grid-template-columns: repeat(8, 12.5%);
   grid-template-rows: repeat(8, 12.5%);
-  width: min(80vw, 80vh);
-  height: min(80vw, 80vh);
+  width: 90vmin;
+  height: 90vmin;
   background-color: blue;
   aspect-ratio: 1;
   position: relative;
   user-select: none;
+}
+
+#chessboard.atomic::before {
+  position: absolute;
+  content: '💥';
+  left: 100%;
+  bottom: 100%;
 }
 
 .modal {
