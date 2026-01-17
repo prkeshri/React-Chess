@@ -10,6 +10,7 @@ interface Props {
   sameTeam?: boolean;
   onRender: (setter: any) => void;
   hasMoves: boolean;
+  kingCheck: boolean;
 }
 
 export default function Tile({
@@ -21,6 +22,7 @@ export default function Tile({
   clicked,
   hasMoves,
   onRender,
+  kingCheck,
 }: Props) {
   const [highlighter, setHighlighter] = useState('');
   useEffect(() => {
@@ -34,7 +36,8 @@ export default function Tile({
     number % 2 !== 0 && "white-tile",
     highlight && "tile-highlight",
     highlighter && `tile-highlight-${highlighter}`,
-    (image && !sameTeam) && "chess-piece-tile"].filter(Boolean).join(' ');
+    (image && !sameTeam) && "chess-piece-tile",
+    kingCheck && "checked"].filter(Boolean).join(' ');
 
   let style: CSSProperties = {};
   if (clicked) {

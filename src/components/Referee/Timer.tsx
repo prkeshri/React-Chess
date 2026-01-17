@@ -9,7 +9,7 @@ type TimerProps = {
 }
 export const Timer = ({ init, setter, team, rotated }: TimerProps) => {
     const isWhite = team === 'w';
-    const placement = (isWhite && rotated) || (!isWhite && !rotated) ? 'top' : 'bottom';
+    const placement = ((isWhite && rotated) || (!isWhite && !rotated)) ? 'top' : 'bottom';
     const [v, setV] = useState(init);
     useEffect(() => {
         setV(init);
@@ -20,12 +20,12 @@ export const Timer = ({ init, setter, team, rotated }: TimerProps) => {
     }, []);
 
     const txt = format(v);
-    return <div className={`timer timer-${placement}`}>{txt}</div>
+    return <div className={`timer timer-${placement} timer-team-${team}`}>{txt}</div>
 }
 
 function format(t: number) {
     const minutes = Math.floor(t / 60);
     const seconds = t % 60;
-    const txt = [minutes, seconds].join(':');
+    const txt = [minutes, seconds].map(j => j.toString().padStart(2, "0")).join(':');
     return txt;
 }

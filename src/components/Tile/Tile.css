@@ -12,6 +12,10 @@
   z-index: 2;
 }
 
+.tile.checked {
+  background-color: indianred;
+}
+
 .tile .has-moves:hover {
   cursor: grab;
 }

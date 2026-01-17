@@ -127,11 +127,9 @@ export default function Referee() {
       return;
     }
     board.timedGame = {
-      total,
+      total: total * 60,
       plus
     };
-
-    board.teams.w.remaining = board.teams.b.remaining = total;
     rerender();
   }
 

@@ -38,9 +38,21 @@ export class Board {
     this.pieces = pieces;
   }
 
-  timedGame?: TimedGame;
+  _timedGame?: TimedGame;
   currentTeam: TeamType = TeamType.WHITE;
 
+  get timedGame() {
+    return this._timedGame;
+  }
+
+  set timedGame(v: TimedGame | undefined) {
+    this._timedGame = v;
+    if (!v) {
+      return;
+    }
+    const { total } = v;
+    Object.values(this.teams).forEach(teamRef => teamRef.remaining = total);
+  }
   pieceAt(p: Position, team?: TeamType) {
     let arr = this._pieces;
     if (team) arr = this.teams[team].pieces;
@@ -211,10 +223,6 @@ export class Board {
 
     this.pieces = newPieces;
 
-    // Next turn
-    this.totalTurns += 1;
-    this.currentTeam = invertTeam(this.currentTeam);
-
     let type: MoveType;
     if (capturedPiece) {
       this.halfMoves = 0;
@@ -228,6 +236,10 @@ export class Board {
     if (timedPlus) {
       this.teams[this.currentTeam].remaining += timedPlus;
     }
+
+    // Next turn
+    this.totalTurns += 1;
+    this.currentTeam = invertTeam(this.currentTeam);
     if (aWinner) {
       return {
         type,
@@ -467,7 +479,7 @@ export class Board {
     fields.push(fullMoves);
     const timedGame = this.timedGame;
     if (timedGame) {
-      const t = [timedGame.total, timedGame.plus, this.teams.w.remaining, this.teams.b.remaining].join(",");
+      const t = [timedGame.total / 60, timedGame.plus, this.teams.w.remaining, this.teams.b.remaining].join(",");
       fields.push(t)
     }
     return fields.join(' ');
@@ -528,7 +540,7 @@ export class Board {
       if (times) {
         const [total, plus, wRemaining, bRemaining] = times.split(',').map(t => parseInt(t)).map(i => isNaN(i) ? 0 : i);
         board.timedGame = {
-          total,
+          total: total * 60,
           plus
         };
 
@@ -557,11 +569,9 @@ export class Board {
     if (timers) {
       const total = timers[0];
       board.timedGame = {
-        total,
+        total: total * 60,
         plus: timers[1] ?? 0,
       }
-
-      Object.values(board.teams).forEach(teamRef => teamRef.remaining = total);
     }
 
     return board;

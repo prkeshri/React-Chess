@@ -9,6 +9,7 @@ import { Piece, Position } from "../../models";
 import { Board } from "../../models/Board";
 import { Positions } from "../../utils/position";
 import { AtomicBoard } from "../../models/AtomicBoard";
+import { King } from "../../models/piece/King";
 
 interface Props {
   playMove: (piece: Piece, position: Position) => void;
@@ -68,7 +69,6 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
 
     const chessRect = chessboard.getBoundingClientRect();
 
-    const parentRect = element.parentElement!.getBoundingClientRect();
     setActivePieceInfo({
       minXY: {
         x: chessRect.left,
@@ -248,7 +248,7 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
       const currentPiece = activePieceInfo?.piece;
       const highlight = currentPiece?.possibleMoves?.some(p => p.samePosition(new Position(i, j)));
       const image = piece ? piece.image : undefined;
-
+      const kingCheck = piece?.isKing && (piece as King).isAttacked;
       board.push(<Tile
         sameTeam={currentPiece?.team === piece?.team}
         clicked={!!(currentPiece && currentPiece === piece)}
@@ -258,6 +258,7 @@ export default function Chessboard({ rotated, playMove, board: chessBoard }: Pro
         image={image}
         number={number}
         highlight={!!highlight}
+        kingCheck={!!kingCheck}
         onRender={(setHighlighter) => {
           tileRerenders[`${i}x${j}`] = setHighlighter
         }}

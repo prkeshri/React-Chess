@@ -25,7 +25,7 @@ export function useStartTimer(board: Board, rerender: any, calculateHash: any) {
             }
         }, 1000);
         return () => clearTimer();
-    }, [board]);
+    }, [board, board.timedGame]);
 
 
     const addRef = (team: TeamType, r: any) => labelRefs[team] = r;
