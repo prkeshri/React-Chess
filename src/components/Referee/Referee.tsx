@@ -145,7 +145,7 @@ export default function Referee() {
       </div>
       {promotionPawn ?
         <div className='modal'>
-          <div className="modal-body">
+          <div className="modal-body pawn-promoter">
             <img
               onClick={() => promotePawn(PieceType.ROOK)}
               src={`/assets/images/rook_${promotionPawn.team}.png`}
@@ -171,7 +171,7 @@ export default function Referee() {
               {
                 board.staleMate
                   ? <div ><b>Stalemate! Draw</b></div>
-                  : <div><div>
+                  : <div><div style={{ textAlign: "center" }}>
                     The winning team is{" "}
                     <span style={{ color: board.winningTeam === TeamType.WHITE ? "white" : "black" }}>
                       <b>{board.winningTeam === TeamType.WHITE ? "white" : "black"}!</b>

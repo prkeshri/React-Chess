@@ -32,20 +32,19 @@
 .modal>.modal-body {
   z-index: 2;
   position: absolute;
-  top: calc(50% - 150px);
-  left: calc(50% - 400px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  height: 300px;
-  width: 800px;
   background-color: rgba(127, 127, 127, 0.8);
+  padding: 40px;
 }
 
 .modal>.modal-body>img {
-  height: 120px;
-  padding: 20px;
   border-radius: 50%;
+  max-width: 20vmin;
 }
 
 .modal>.modal-body>img:hover {

@@ -80,3 +80,7 @@ button.square {
     width: 2.5em;
     aspect-ratio: 1;
 }
+
+.pawn-promoter {
+    border-radius: 20vmin;
+}
